@@ -1,14 +1,11 @@
 const { mongoose, Schema, ObjectId } = require('../config/database');
 
-const ShiftAttendanceSchema = new Schema(
-  {
-    employee: { type: ObjectId, ref: 'employees' },
-    workDate: Date,
-    workShift: { type: ObjectId, ref: 'work_shifts' },
-  },
-  {
-    timestamps: true,
-  }
-);
+const shiftAttendanceSchema = new Schema({
+  shiftRegistration: { type: ObjectId, ref: 'shift_registrations' },
+  employee: { type: ObjectId, ref: 'employees' },
+  checkInTime: Date,
+  checkOutTime: Date,
+  status: String,
+});
 
-module.exports = mongoose.model('shift_attendances', ShiftAttendanceSchema);
+module.exports = mongoose.model('shift_attendances', shiftAttendanceSchema);

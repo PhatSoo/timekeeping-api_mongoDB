@@ -1,54 +1,15 @@
 const EmployeeModel = require('../models/employee');
-const utils = require('../utils');
+const ShiftRegistrationModel = require('../models/shiftregistration');
+const ShiftAttendanceModel = require('../models/shiftattendance');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+require('dotenv/config');
 
-const createEmployee = async (req, res, next) => {
-  let { name, email, password, isPartTime, CCCD, sex, roleId } = req.body;
+const fs = require('fs');
+const path = require('path');
 
-  if (name === undefined || email === undefined || password === undefined || isPartTime === undefined || CCCD === undefined || sex === undefined || roleId === undefined || phone === undefined) {
-    return res.status(422).json({
-      status: false,
-      message: 'Missing required params',
-    });
-  }
-
-  if (!utils.validateEmail(email)) {
-    return res.status(422).json({
-      status: false,
-      message: 'Email is not validate',
-    });
-  }
-
-  try {
-    const existingEmployee = await EmployeeModel.findOne({ email });
-    if (existingEmployee) {
-      return res.status(422).json({ success: false, message: 'Email already exists.' });
-    }
-    const hash = await bcrypt.hash(password, 10);
-    await EmployeeModel.create({ name, email, password: hash, isPartTime, CCCD, sex, roleId, phone });
-    res.status(201).json({
-      status: true,
-      message: 'Create an employee successfully.!',
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
-  }
-};
-
-const listEmployees = async (req, res, next) => {
-  try {
-    const employees = await EmployeeModel.find().populate('roleId', 'typeName');
-    res.status(200).json({
-      status: true,
-      data: employees,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
-  }
-};
-
-const getEmployee = async (req, res) => {
-  const { id } = req.params;
+const getMe = async (req, res) => {
+  const id = req.userId;
 
   try {
     const employee = await EmployeeModel.findById(id).populate('roleId', 'typeName');
@@ -61,8 +22,8 @@ const getEmployee = async (req, res) => {
   }
 };
 
-const updateEmployee = async (req, res) => {
-  const { id } = req.params;
+const updateMe = async (req, res) => {
+  const id = req.userId;
   const updates = req.body;
 
   if (updates.email && !util.validateEmail(updates.email)) {
@@ -112,24 +73,83 @@ const updateEmployee = async (req, res) => {
   }
 };
 
-const deleteEmployee = async (req, res) => {
-  const { id } = req.params;
+const uploadAvatar = async (req, res) => {
+  const id = req.userId;
+
+  if (!req.file) {
+    res.status(200).json({ success: false, message: 'Chưa chọn ảnh' });
+  }
+
+  const file = req.file;
 
   try {
-    const deletedEmployee = await EmployeeModel.findByIdAndDelete(id);
-    if (!deletedEmployee) {
-      return res.status(404).json({ success: false, message: 'Employee not found.' });
+    // Lấy thông tin về ảnh cũ từ cơ sở dữ liệu
+    const employee = await EmployeeModel.findById(id);
+    const oldImage = employee.image;
+
+    const result = await EmployeeModel.findByIdAndUpdate(id, { image: file.filename }, { new: true });
+    if (!result) {
+      return res.status(404).json({ success: false, message: 'Update Failed' });
     }
+
+    // Xóa ảnh cũ khỏi thư mục
+    fs.unlink(path.join(path.join(process.cwd(), 'uploads/avatars', oldImage)), (err) => {
+      if (err) {
+        console.error('Có lỗi xảy ra khi xóa ảnh:', err);
+      }
+    });
+
     res.status(204).end();
+  } catch (error) {
+    console.log('Có lỗi xảy ra khi cập nhật:', error);
+  }
+};
+
+const getSchedule = async (req, res) => {
+  const id = req.userId;
+
+  try {
+    const shiftRegistration = await ShiftRegistrationModel.find({ employee: id }).populate('employee', 'name').populate('workShift', 'shiftName');
+    if (!shiftRegistration) {
+      return res.status(404).json({ success: false, message: 'Shift registration not found.' });
+    }
+    res.status(200).json({ success: true, data: shiftRegistration });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
+const getAttendance = async (req, res) => {
+  const employee = req.userId;
+  try {
+    const shiftAttendances = await ShiftAttendanceModel.find({ employee }).populate({
+      path: 'shiftRegistration',
+      populate: [
+        {
+          path: 'employee',
+          select: 'name',
+        },
+        {
+          path: 'workShift',
+          select: 'shiftName',
+        },
+      ],
+      select: 'workDate',
+    });
+
+    res.status(200).json({
+      success: true,
+      data: shiftAttendances,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
 };
 
 module.exports = {
-  createEmployee,
-  listEmployees,
-  getEmployee,
-  updateEmployee,
-  deleteEmployee,
+  getMe,
+  updateMe,
+  uploadAvatar,
+  getSchedule,
+  getAttendance,
 };

@@ -51,12 +51,20 @@ const updateWorkShift = async (req, res) => {
   const { id } = req.params;
   const { shiftName, startTime, endTime } = req.body;
 
-  if (!shiftName || !startTime || !endTime) {
+  if (!shiftName && !startTime && !endTime) {
     return res.status(422).json({ success: false, message: 'shiftName, startTime and endTime are required.' });
   }
 
-  if (typeof shiftName !== 'string' || typeof startTime !== 'number' || typeof endTime !== 'number') {
-    return res.status(422).json({ success: false, message: 'shiftName must be a string. startTime and endTime must be numbers.' });
+  if (shiftName && typeof shiftName !== 'string') {
+    return res.status(422).json({ success: false, message: 'shiftName must be a string.' });
+  }
+
+  if (startTime && typeof startTime !== 'number') {
+    return res.status(422).json({ success: false, message: 'startTime must be numbers.' });
+  }
+
+  if (endTime && typeof endTime !== 'number') {
+    return res.status(422).json({ success: false, message: 'endTime must be numbers.' });
   }
 
   try {

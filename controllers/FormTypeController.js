@@ -18,7 +18,7 @@ const createFormType = async (req, res) => {
     }
     const newFormType = new FormTypeModel({ typeName });
     await newFormType.save();
-    res.status(201).json({ success: true, message: `FormType added with ID: ${newFormType.id}` });
+    res.status(201).json({ success: true, message: `FormType added with Form Type: ${newFormType.typeName}` });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }

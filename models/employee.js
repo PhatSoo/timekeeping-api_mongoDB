@@ -8,6 +8,8 @@ const employeeSchema = new Schema(
     isPartTime: Boolean,
     CCCD: Number,
     sex: Boolean,
+    phone: String,
+    image: String,
     roleId: {
       type: ObjectId,
       ref: 'roles',
