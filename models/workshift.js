@@ -3,8 +3,8 @@ const { mongoose, Schema } = require('../config/database');
 const workShiftSchema = new Schema(
   {
     shiftName: String,
-    startTime: Number,
-    endTime: Number,
+    startTime: String,
+    endTime: String,
   },
   {
     timestamps: true,

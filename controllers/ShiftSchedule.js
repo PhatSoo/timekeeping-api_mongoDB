@@ -26,7 +26,7 @@ const createShiftRegistration = async (req, res) => {
         if (!workShift) {
           throw new Error(`Work shift not found: ${item.workShift}`);
         }
-        return { ...item, employee, workShift: workShift._id };
+        return { ...item, workShift: workShift._id, employee };
       })
     );
 

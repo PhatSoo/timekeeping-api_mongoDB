@@ -30,6 +30,7 @@ const APIRoute = (app) => {
   // Work Shifts
   router.get('/work-shift', WorkShiftController.listWorkShifts);
   router.get('/work-shift/:id', WorkShiftController.getWorkShift);
+  router.get('/current-shift', WorkShiftController.getCurrentShift);
   router.post('/work-shift', WorkShiftController.createWorkShift);
   router.put('/work-shift/:id', WorkShiftController.updateWorkShift);
   router.delete('/work-shift/:id', WorkShiftController.deleteWorkShift);

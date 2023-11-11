@@ -10,6 +10,7 @@ const employeeSchema = new Schema(
     sex: Boolean,
     phone: String,
     image: String,
+    avatar: String,
     roleId: {
       type: ObjectId,
       ref: 'roles',

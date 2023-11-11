@@ -35,45 +35,43 @@ const createShiftAttendance = async (req, res) => {
 };
 
 const listShiftAttendances = async (req, res) => {
-  const checkInTime = null;
-  const checkOutTime = null;
-  const status = null;
-  try {
-    const shiftRegis = await ShiftRegistration.find({});
-    const updates = await Promise.all(shiftRegis.map(async (item) => ({ ...item, checkInTime, checkOutTime, status, shiftRegistration: item._id, employee: item.employee })));
-    await ShiftAttendance.insertMany(updates);
-    data = await ShiftAttendance.find({});
-    return res.status(200).json({
-      data,
-    });
-  } catch (error) {
-    console.log('====================================');
-    console.log(error);
-    console.log('====================================');
-  }
-
   // try {
-  //   const shiftAttendances = await ShiftAttendance.find().populate({
-  //     path: 'shiftRegistration',
-  //     populate: [
-  //       {
-  //         path: 'employee',
-  //         select: 'name',
-  //       },
-  //       {
-  //         path: 'workShift',
-  //         select: 'shiftName',
-  //       },
-  //     ],
-  //     select: 'workDate',
-  //   });
-  //   res.status(200).json({
-  //     success: true,
-  //     data: shiftAttendances,
+  //   const shiftRegis = await ShiftRegistration.find({});
+  //   const updates = await Promise.all(shiftRegis.map(async (item) => ({ ...item, shiftRegistration: item._id })));
+  //   await ShiftAttendance.insertMany(updates);
+  //   data = await ShiftAttendance.find({});
+  //   return res.status(200).json({
+  //     data,
   //   });
   // } catch (error) {
-  //   res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  //   console.log('====================================');
+  //   console.log(error);
+  //   console.log('====================================');
   // }
+
+  try {
+    const shiftAttendances = await ShiftAttendance.find().populate({
+      path: 'shiftRegistration',
+      populate: [
+        {
+          path: 'employee',
+          select: 'name',
+        },
+        {
+          path: 'workShift',
+          select: 'shiftName',
+        },
+      ],
+      select: 'workDate',
+    });
+    res.status(200).json({
+      success: true,
+      data: shiftAttendances,
+      total: shiftAttendances.length,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
 };
 
 const getShiftAttendance = async (req, res) => {

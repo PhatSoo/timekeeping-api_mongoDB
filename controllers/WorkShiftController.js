@@ -1,14 +1,11 @@
 const WorkShiftModel = require('../models/workshift');
 
 const createWorkShift = async (req, res) => {
+  // "22:15:00"
   const { shiftName, startTime, endTime } = req.body;
 
   if (!shiftName || !startTime || !endTime) {
     return res.status(422).json({ success: false, message: 'shiftName, startTime and endTime are required.' });
-  }
-
-  if (typeof shiftName !== 'string' || typeof startTime !== 'number' || typeof endTime !== 'number') {
-    return res.status(422).json({ success: false, message: 'shiftName must be a string. startTime and endTime must be numbers.' });
   }
 
   try {
@@ -42,6 +39,32 @@ const getWorkShift = async (req, res) => {
       return res.status(404).json({ success: false, message: 'WorkShift not found.' });
     }
     res.status(200).json({ success: true, data: workShift });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
+const getCurrentShift = async (req, res) => {
+  try {
+    const shifts = await WorkShiftModel.find();
+    const currentDate = new Date();
+    const currentTime = currentDate.getHours() + currentDate.getMinutes() / 60;
+
+    const currentShift = shifts.find((shift) => {
+      const startTime = new Date('1970-01-01T' + shift.startTime + ':00Z').getUTCHours() - 0.5;
+      const endTime = new Date('1970-01-01T' + shift.endTime + ':00Z').getUTCHours() + 0.5;
+
+      if (currentTime >= startTime && currentTime < endTime) {
+        return true;
+      }
+      return false;
+    });
+
+    if (currentShift) {
+      res.status(200).json({ success: true, data: currentShift });
+    } else {
+      res.status(422).json({ success: false, message: 'Hiện tại đang không có ca làm việc' });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
@@ -100,6 +123,7 @@ module.exports = {
   createWorkShift,
   listWorkShifts,
   getWorkShift,
+  getCurrentShift,
   updateWorkShift,
   deleteWorkShift,
 };

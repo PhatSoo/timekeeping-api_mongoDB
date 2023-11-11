@@ -8,7 +8,7 @@ const storageAvatar = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
-    cb(null, req.userId + '-' + uniqueSuffix + extension);
+    cb(null, 'AV-' + req.userId + '-' + uniqueSuffix + extension);
   },
 });
 
@@ -35,7 +35,7 @@ const storageAttendance = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + '.' + extension);
+    cb(null, 'AT-' + req.userId + '-' + uniqueSuffix + extension);
   },
 });
 
@@ -43,7 +43,7 @@ const uploadAttendance = multer({
   storage: storageAttendance,
   limits: { fieldSize: 10000000 /* 10MB */ },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype == 'image/png' || file.mimetype == 'image/jpg') {
+    if (file.mimetype == 'image/png' || file.mimetype == 'image/jpeg') {
       cb(null, true);
     } else {
       console.log('====================================');
