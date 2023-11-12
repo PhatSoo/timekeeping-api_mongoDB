@@ -80,7 +80,7 @@ const APIRoute = (app) => {
   router.delete('/shift-attendance/all', ShiftAttendanceController.deleteAll);
   router.delete('/shift-attendance/:id', ShiftAttendanceController.deleteShiftAttendance);
 
-  return app.use('/api/' /*, authenticate*/, router);
+  return app.use('/api/', router);
 };
-
+// , authenticate
 module.exports = APIRoute;
