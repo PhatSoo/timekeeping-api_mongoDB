@@ -270,8 +270,8 @@ const getAttendance = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: shiftAttendances,
-      total: shiftAttendances.length,
+      data: result,
+      total: result.length,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
