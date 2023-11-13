@@ -299,7 +299,7 @@ const getExistingShiftInCurrent = async (req, res) => {
   const { shiftId } = req.params;
   // const currentDate = new Date('2023-11-16T00:00:00.000Z');
   const currentDate = new Date();
-  // currentDate.setHours(0, 0, 0, 0);
+  currentDate.setUTCHours(0, 0, 0, 0);
 
   try {
     const shifts = (
@@ -346,9 +346,6 @@ const getExistingShiftInCurrent = async (req, res) => {
             checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime' } },
             checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime' } },
           },
-        },
-        {
-          $limit: 1,
         },
       ])
     )[0];

@@ -65,7 +65,7 @@ const updateEmployee = async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
 
-  if (updates.email && !util.validateEmail(updates.email)) {
+  if (updates.email && !utils.validateEmail(updates.email)) {
     return res.status(422).json({ success: false, message: 'Email is not validate.' });
   }
 
