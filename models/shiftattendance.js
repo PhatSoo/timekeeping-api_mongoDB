@@ -6,7 +6,7 @@ const shiftAttendanceSchema = new Schema({
   checkOutTime: { type: Date, default: null },
   status: {
     type: String,
-    enum: ['NULL', 'WORKING', 'LATE', 'EARLY', 'DONE'],
+    enum: ['NULL', 'WORKING', 'DONE'],
     default: 'NULL',
   },
 });
@@ -14,8 +14,6 @@ const shiftAttendanceSchema = new Schema({
 /*
   'NULL': Mặc định.
   'WORKING': Nhân viên đang làm việc.
-  'LATE': Nhân viên đi muộn.
-  'EARLY': Nhân viên về sớm.
   'DONE': Hoàn thành.
 */
 

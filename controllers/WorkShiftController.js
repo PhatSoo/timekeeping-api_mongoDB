@@ -23,7 +23,7 @@ const createWorkShift = async (req, res) => {
 
 const listWorkShifts = async (req, res) => {
   try {
-    const results = await WorkShiftModel.find();
+    const results = await WorkShiftModel.find().sort({ startTime: 1 });
     res.status(200).json({ success: true, data: results });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });

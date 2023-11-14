@@ -216,8 +216,8 @@ const getAttendance = async (req, res) => {
           $project: {
             shiftRegistration: { workDate: 1 },
             workShift: { shiftName: 1 },
-            checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime' } },
-            checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime' } },
+            checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime', timezone: process.env.TZ } },
+            checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime', timezone: process.env.TZ } },
             status: 1,
           },
         },
@@ -343,8 +343,9 @@ const getExistingShiftInCurrent = async (req, res) => {
             shiftRegistration: 1,
             employee: { _id: 1, name: 1 },
             workShift: { shiftName: 1, startTime: 1, endTime: 1 },
-            checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime' } },
-            checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime' } },
+            checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime', timezone: process.env.TZ } },
+            checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime', timezone: process.env.TZ } },
+            status: 1,
           },
         },
       ])
