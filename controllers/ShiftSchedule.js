@@ -1,4 +1,5 @@
 const ShiftRegistration = require('../models/shiftregistration');
+const ShiftAttendanceModel = require('../models/shiftattendance');
 const WorkShift = require('../models/workshift');
 
 const createShiftRegistration = async (req, res) => {
@@ -40,7 +41,7 @@ const createShiftRegistration = async (req, res) => {
     try {
       const shiftRegis = await ShiftRegistration.find({ _id: { $in: insertedIds } });
       const updates = await Promise.all(shiftRegis.map(async (item) => ({ ...item, shiftRegistration: item._id })));
-      await ShiftAttendance.insertMany(updates);
+      await ShiftAttendanceModel.insertMany(updates);
       //   data = await ShiftAttendance.find({});
       //   return res.status(200).json({
       //     data,
