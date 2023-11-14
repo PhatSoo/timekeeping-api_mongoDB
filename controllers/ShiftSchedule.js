@@ -33,7 +33,24 @@ const createShiftRegistration = async (req, res) => {
     // Xóa tất cả các ca làm việc hiện tại của nhân viên
     await ShiftRegistration.deleteMany({ employee: employee._id });
 
-    await ShiftRegistration.insertMany(updates);
+    const results = await ShiftRegistration.insertMany(updates);
+
+    /* -----------------FOR TEST-------------- */
+    const insertedIds = results.map((doc) => doc._id);
+    try {
+      const shiftRegis = await ShiftRegistration.find({ _id: { $in: insertedIds } });
+      const updates = await Promise.all(shiftRegis.map(async (item) => ({ ...item, shiftRegistration: item._id })));
+      await ShiftAttendance.insertMany(updates);
+      //   data = await ShiftAttendance.find({});
+      //   return res.status(200).json({
+      //     data,
+      //   });
+    } catch (error) {
+      //   console.log('====================================');
+      //   console.log(error);
+      //   console.log('====================================');
+    }
+
     res.status(201).json({
       success: true,
       message: 'Bạn đã đăng ký ca làm thành công, nhớ theo dỗi lịch để biết mình được xếp vào ca nào nhé!',
