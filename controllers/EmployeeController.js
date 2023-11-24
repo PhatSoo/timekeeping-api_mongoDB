@@ -7,14 +7,14 @@ const createEmployee = async (req, res, next) => {
 
   if (name === undefined || email === undefined || password === undefined || isPartTime === undefined || CCCD === undefined || sex === undefined || roleId === undefined || phone === undefined) {
     return res.status(422).json({
-      status: false,
+      success: false,
       message: 'Missing required params',
     });
   }
 
   if (!utils.validateEmail(email)) {
     return res.status(422).json({
-      status: false,
+      success: false,
       message: 'Email is not validate',
     });
   }
@@ -27,7 +27,7 @@ const createEmployee = async (req, res, next) => {
     const hash = await bcrypt.hash(password, 10);
     await EmployeeModel.create({ name, email, password: hash, isPartTime, CCCD, sex, roleId, phone });
     res.status(201).json({
-      status: true,
+      success: true,
       message: 'Create an employee successfully.!',
     });
   } catch (error) {
@@ -39,7 +39,21 @@ const listEmployees = async (req, res, next) => {
   try {
     const employees = await EmployeeModel.find().populate('roleId', 'typeName');
     res.status(200).json({
-      status: true,
+      success: true,
+      data: employees,
+      total: employees.length,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
+const listEmployeesPartTime = async (req, res, next) => {
+  const { isPartTime } = req.params;
+  try {
+    const employees = await EmployeeModel.find({ isPartTime }).populate('roleId', 'typeName');
+    res.status(200).json({
+      success: true,
       data: employees,
     });
   } catch (error) {
@@ -80,7 +94,7 @@ const updateEmployee = async (req, res) => {
   try {
     const employee = await EmployeeModel.findById(id);
     if (!employee) {
-      return res.status(404).json({ status: false, message: 'Không tìm thấy nhân viên.' });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy nhân viên.' });
     }
 
     if (updates.email) {
@@ -129,6 +143,7 @@ const deleteEmployee = async (req, res) => {
 module.exports = {
   createEmployee,
   listEmployees,
+  listEmployeesPartTime,
   getEmployee,
   updateEmployee,
   deleteEmployee,

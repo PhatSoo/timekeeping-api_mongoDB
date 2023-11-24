@@ -1,4 +1,5 @@
 const ShiftRegistration = require('../models/shiftregistration');
+const ShiftAttendanceModel = require('../models/shiftattendance');
 const WorkShift = require('../models/workshift');
 
 const createShiftRegistration = async (req, res) => {
@@ -20,36 +21,28 @@ const createShiftRegistration = async (req, res) => {
   }
 
   try {
-    const updates = await Promise.all(
+    await Promise.all(
       data.map(async (item) => {
-        const workShift = await WorkShift.findOne({ shiftName: item.workShift });
-        if (!workShift) {
-          throw new Error(`Work shift not found: ${item.workShift}`);
+        const existingShiftRegistration = await ShiftRegistration.findOne({ workDate: item.workDate });
+
+        if (existingShiftRegistration) {
+          // Nếu workDate đã tồn tại, xóa nó trước khi thêm mới
+          await ShiftRegistration.deleteMany({ workDate: item.workDate });
         }
-        return { ...item, workShift: workShift._id, employee };
+
+        const workShifts = await WorkShift.find({ shiftName: { $in: item.workShift } });
+        if (workShifts.length !== item.workShift.length) {
+          throw new Error(`Some work shifts not found: ${item.workShift}`);
+        }
+        const newShiftRegistration = new ShiftRegistration({
+          ...item,
+          workShift: workShifts.map((shift) => shift._id),
+          employee,
+        });
+        await newShiftRegistration.save();
+        return newShiftRegistration;
       })
     );
-
-    // Xóa tất cả các ca làm việc hiện tại của nhân viên
-    await ShiftRegistration.deleteMany({ employee: employee._id });
-
-    const results = await ShiftRegistration.insertMany(updates);
-
-    /* -----------------FOR TEST-------------- */
-    const insertedIds = results.map((doc) => doc._id);
-    try {
-      const shiftRegis = await ShiftRegistration.find({ _id: { $in: insertedIds } });
-      const updates = await Promise.all(shiftRegis.map(async (item) => ({ ...item, shiftRegistration: item._id })));
-      await ShiftAttendance.insertMany(updates);
-      //   data = await ShiftAttendance.find({});
-      //   return res.status(200).json({
-      //     data,
-      //   });
-    } catch (error) {
-      //   console.log('====================================');
-      //   console.log(error);
-      //   console.log('====================================');
-    }
 
     res.status(201).json({
       success: true,

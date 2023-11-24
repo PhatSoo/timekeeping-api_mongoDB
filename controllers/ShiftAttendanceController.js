@@ -35,20 +35,6 @@ const createShiftAttendance = async (req, res) => {
 };
 
 const listShiftAttendances = async (req, res) => {
-  // try {
-  //   const shiftRegis = await ShiftRegistration.find({});
-  //   const updates = await Promise.all(shiftRegis.map(async (item) => ({ ...item, shiftRegistration: item._id })));
-  //   await ShiftAttendance.insertMany(updates);
-  //   data = await ShiftAttendance.find({});
-  //   return res.status(200).json({
-  //     data,
-  //   });
-  // } catch (error) {
-  //   console.log('====================================');
-  //   console.log(error);
-  //   console.log('====================================');
-  // }
-
   try {
     const shiftAttendances = await ShiftAttendance.find().populate({
       path: 'shiftRegistration',
@@ -69,6 +55,19 @@ const listShiftAttendances = async (req, res) => {
       data: shiftAttendances,
       total: shiftAttendances.length,
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
+const getAttendanceByDate = async (req, res) => {
+  const { date } = req.params;
+  try {
+    const attendance = await ShiftAttendance.find({ workDate: new Date(date) });
+    if (!attendance) {
+      return res.status(404).json({ success: false, message: 'Attendance not found.' });
+    }
+    res.status(200).json({ success: true, data: attendance, total: attendance.length });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
@@ -129,6 +128,7 @@ const deleteAll = async (req, res) => {
 module.exports = {
   createShiftAttendance,
   listShiftAttendances,
+  getAttendanceByDate,
   getShiftAttendance,
   updateShiftAttendance,
   deleteShiftAttendance,

@@ -27,6 +27,7 @@ require('dotenv/config');
 
 const login = async (req, res) => {
   const { email, password } = req.body;
+  console.log('hello world');
 
   try {
     const existingEmployee = await EmployeeModel.findOne({ email });

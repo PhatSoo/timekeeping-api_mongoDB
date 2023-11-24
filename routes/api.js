@@ -7,15 +7,16 @@ const WorkShiftController = require('../controllers/WorkShiftController');
 const FormTypeController = require('../controllers/FormTypeController');
 const FormRequestController = require('../controllers/FormRequestController');
 const AttendanceController = require('../controllers/AttendanceController');
-const ShiftSchedule = require('../controllers/ShiftSchedule');
+const ShiftScheduleController = require('../controllers/ShiftSchedule');
 const ShiftAttendanceController = require('../controllers/ShiftAttendanceController');
 const WorkDayController = require('../controllers/WorkDayController');
 const authenticate = require('../middlewares/CheckLogin');
 
 const APIRoute = (app) => {
   // Employees API
-  router.get('/employee', EmployeeController.listEmployees);
+  router.get('/employee/part-time/:isPartTime', EmployeeController.listEmployeesPartTime);
   router.get('/employee/:id', EmployeeController.getEmployee);
+  router.get('/employee', EmployeeController.listEmployees);
   router.post('/employee', EmployeeController.createEmployee);
   router.put('/employee/:id', EmployeeController.updateEmployee);
   router.delete('/employee/:id', EmployeeController.deleteEmployee);
@@ -24,8 +25,8 @@ const APIRoute = (app) => {
   router.get('/role', RoleController.listRole);
   router.get('/role/:id', RoleController.getRole);
   router.post('/role', RoleController.createRole);
-  router.put('/role/:id', RoleController.updateRole);
-  router.delete('/role/:id', RoleController.deleteRole);
+  router.put('/role', RoleController.updateRole);
+  router.delete('/role', RoleController.deleteRole);
 
   // Work Shifts
   router.get('/work-shift', WorkShiftController.listWorkShifts);
@@ -58,29 +59,31 @@ const APIRoute = (app) => {
 
   // Attendances for full-time
   router.get('/attendance', AttendanceController.listAttendances);
+  router.get('/attendance/date/:date', AttendanceController.getAttendanceByDate);
   router.get('/attendance/:id', AttendanceController.getAttendance);
   router.post('/attendance', AttendanceController.createAttendance);
   router.put('/attendance/:id', AttendanceController.updateAttendance);
   router.delete('/attendance/:id', AttendanceController.deleteAttendance);
 
   // Attendances for part-time
-  router.get('/shift-schedule', ShiftSchedule.listShiftRegistrations);
-  router.get('/shift-schedule/:id', ShiftSchedule.getShiftRegistrationByID);
-  router.get('/shift-schedule/user/:id', ShiftSchedule.getShiftRegistrationByID);
-  router.post('/shift-schedule', ShiftSchedule.createShiftRegistration);
-  router.put('/shift-schedule/:id', ShiftSchedule.updateShiftRegistration);
-  router.delete('/shift-schedule/all', ShiftSchedule.deleteAll);
-  router.delete('/shift-schedule/:id', ShiftSchedule.deleteShiftRegistration);
+  router.get('/shift-schedule', ShiftScheduleController.listShiftRegistrations);
+  router.get('/shift-schedule/:id', ShiftScheduleController.getShiftRegistrationByID);
+  router.get('/shift-schedule/user/:id', ShiftScheduleController.getShiftRegistrationByID);
+  router.post('/shift-schedule', ShiftScheduleController.createShiftRegistration);
+  router.put('/shift-schedule/:id', ShiftScheduleController.updateShiftRegistration);
+  router.delete('/shift-schedule/all', ShiftScheduleController.deleteAll);
+  router.delete('/shift-schedule/:id', ShiftScheduleController.deleteShiftRegistration);
 
   // Attendances for part-time
   router.get('/shift-attendance', ShiftAttendanceController.listShiftAttendances);
+  router.get('/shift-attendance/date/:date', ShiftAttendanceController.getAttendanceByDate);
   router.get('/shift-attendance/:id', ShiftAttendanceController.getShiftAttendance);
   router.post('/shift-attendance', ShiftAttendanceController.createShiftAttendance);
   router.put('/shift-attendance/:id', ShiftAttendanceController.updateShiftAttendance);
   router.delete('/shift-attendance/all', ShiftAttendanceController.deleteAll);
   router.delete('/shift-attendance/:id', ShiftAttendanceController.deleteShiftAttendance);
 
-  return app.use('/api/', authenticate, router);
+  return app.use('/api/', router);
 };
-
+// , authenticate
 module.exports = APIRoute;

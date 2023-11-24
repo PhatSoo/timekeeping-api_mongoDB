@@ -15,7 +15,20 @@ const createAttendance = async (req, res) => {
 const listAttendances = async (req, res) => {
   try {
     const results = await AttendanceModel.find();
-    res.status(200).json({ success: true, data: results });
+    res.status(200).json({ success: true, data: results, total: results.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
+const getAttendanceByDate = async (req, res) => {
+  const { date } = req.params;
+  try {
+    const attendance = await AttendanceModel.find({ workDate: new Date(date) });
+    if (!attendance) {
+      return res.status(404).json({ success: false, message: 'Attendance not found.' });
+    }
+    res.status(200).json({ success: true, data: attendance, total: attendance.length });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
@@ -71,6 +84,7 @@ const deleteAttendance = async (req, res) => {
 module.exports = {
   createAttendance,
   listAttendances,
+  getAttendanceByDate,
   getAttendance,
   updateAttendance,
   deleteAttendance,

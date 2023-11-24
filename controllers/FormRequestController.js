@@ -19,7 +19,7 @@ const createFormRequest = async (req, res) => {
 const listFormRequests = async (req, res) => {
   try {
     const results = await FormRequestModel.find().populate('employeeId', 'name email').populate('formTypeId', 'typeName').populate('workShiftId', 'shiftName startTime endTime');
-    res.status(200).json({ success: true, data: results });
+    res.status(200).json({ success: true, data: results, total: results.length });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }

@@ -28,7 +28,7 @@ const createRole = async (req, res, next) => {
 const listRole = async (req, res) => {
   try {
     const results = await RoleModel.find();
-    res.status(200).json({ success: true, data: results });
+    res.status(200).json({ success: true, data: results, total: results.length });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
@@ -49,8 +49,7 @@ const getRole = async (req, res) => {
 };
 
 const updateRole = async (req, res) => {
-  const { id } = req.params;
-  const { typeName } = req.body;
+  const { typeName, _id } = req.body.data;
 
   if (!typeName) {
     return res.status(400).json({ success: false, message: 'typeName is required.' });
@@ -61,22 +60,22 @@ const updateRole = async (req, res) => {
   }
 
   try {
-    const existingRole = await RoleModel.findOne({ typeName, _id: { $ne: id } });
+    const existingRole = await RoleModel.findOne({ typeName, _id: { $ne: _id } });
     if (existingRole) {
       return res.status(400).json({ success: false, message: 'Role already exists.' });
     }
-    const updatedRole = await RoleModel.findByIdAndUpdate(id, { typeName }, { new: true });
+    const updatedRole = await RoleModel.findByIdAndUpdate(_id, { typeName }, { new: true });
     if (!updatedRole) {
       return res.status(404).json({ success: false, message: 'Role not found.' });
     }
-    res.status(204).end();
+    res.status(201).json({ success: true, message: 'Update Role successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
 };
 
 const deleteRole = async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.body;
 
   try {
     const deletedRole = await RoleModel.findByIdAndDelete(id);
