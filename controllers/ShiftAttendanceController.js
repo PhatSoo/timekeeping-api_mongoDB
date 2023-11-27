@@ -63,7 +63,7 @@ const listShiftAttendances = async (req, res) => {
 const getAttendanceByDate = async (req, res) => {
   const { date } = req.params;
   try {
-    const attendance = await ShiftAttendance.find({ workDate: new Date(date) });
+    const attendance = await ShiftAttendance.find({ workDate: new Date(date) }).populate('workShift', 'shiftName');
     if (!attendance) {
       return res.status(404).json({ success: false, message: 'Attendance not found.' });
     }

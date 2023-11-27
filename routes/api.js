@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { uploadAvatar } = require('../middlewares/Uploads');
 
 const EmployeeController = require('../controllers/EmployeeController');
 const RoleController = require('../controllers/RoleController');
@@ -10,6 +11,7 @@ const AttendanceController = require('../controllers/AttendanceController');
 const ShiftScheduleController = require('../controllers/ShiftSchedule');
 const ShiftAttendanceController = require('../controllers/ShiftAttendanceController');
 const WorkDayController = require('../controllers/WorkDayController');
+const UploadController = require('../controllers/UploadController');
 const authenticate = require('../middlewares/CheckLogin');
 
 const APIRoute = (app) => {
@@ -18,8 +20,12 @@ const APIRoute = (app) => {
   router.get('/employee/:id', EmployeeController.getEmployee);
   router.get('/employee', EmployeeController.listEmployees);
   router.post('/employee', EmployeeController.createEmployee);
-  router.put('/employee/:id', EmployeeController.updateEmployee);
+  router.put('/employee', EmployeeController.updateEmployee);
   router.delete('/employee/:id', EmployeeController.deleteEmployee);
+  router.delete('/employee', EmployeeController.deleteEmployeeMultiple);
+
+  // Upload API
+  router.post('/upload/avatar', uploadAvatar.single('avatar'), UploadController.uploadAvatar);
 
   // Roles API
   router.get('/role', RoleController.listRole);
@@ -33,8 +39,8 @@ const APIRoute = (app) => {
   router.get('/work-shift/:id', WorkShiftController.getWorkShift);
   router.get('/current-shift', WorkShiftController.getCurrentShift);
   router.post('/work-shift', WorkShiftController.createWorkShift);
-  router.put('/work-shift/:id', WorkShiftController.updateWorkShift);
-  router.delete('/work-shift/:id', WorkShiftController.deleteWorkShift);
+  router.put('/work-shift', WorkShiftController.updateWorkShift);
+  router.delete('/work-shift', WorkShiftController.deleteWorkShift);
 
   // Form Types
   router.get('/form-type', FormTypeController.listFormTypes);
@@ -67,8 +73,9 @@ const APIRoute = (app) => {
 
   // Attendances for part-time
   router.get('/shift-schedule', ShiftScheduleController.listShiftRegistrations);
-  router.get('/shift-schedule/:id', ShiftScheduleController.getShiftRegistrationByID);
   router.get('/shift-schedule/user/:id', ShiftScheduleController.getShiftRegistrationByID);
+  router.get('/shift-schedule/:id', ShiftScheduleController.getShiftRegistrationByID);
+  router.post('/shift-schedule/schedule', ShiftScheduleController.schedule);
   router.post('/shift-schedule', ShiftScheduleController.createShiftRegistration);
   router.put('/shift-schedule/:id', ShiftScheduleController.updateShiftRegistration);
   router.delete('/shift-schedule/all', ShiftScheduleController.deleteAll);

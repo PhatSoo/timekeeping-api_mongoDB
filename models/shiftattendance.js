@@ -1,9 +1,11 @@
 const { mongoose, Schema, ObjectId } = require('../config/database');
 
 const shiftAttendanceSchema = new Schema({
-  shiftRegistration: { type: ObjectId, ref: 'shift_registrations' },
+  workShift: { type: ObjectId, ref: 'work_shifts' },
+  employee: { type: ObjectId, ref: 'employees' },
   checkInTime: { type: Date, default: null },
   checkOutTime: { type: Date, default: null },
+  workDate: Date,
   status: {
     type: String,
     enum: ['NULL', 'WORKING', 'DONE'],

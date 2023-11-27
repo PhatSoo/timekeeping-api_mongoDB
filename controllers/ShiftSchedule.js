@@ -118,6 +118,124 @@ const deleteAll = async (req, res) => {
   }
 };
 
+const data = [
+  {
+    _id: '655c7f20b4140fcb2f2e82a9',
+    employee: {
+      _id: '652919655281b232096b3e98',
+      name: 'Hoang Van E',
+    },
+    workDate: '2023-11-22T00:00:00.000Z',
+    workShift: [
+      {
+        _id: '6528ea8275292954d4e3f3f5',
+        shiftName: 'Ca sáng',
+      },
+    ],
+    createdAt: '2023-11-21T09:57:52.036Z',
+    updatedAt: '2023-11-21T09:57:52.036Z',
+    __v: 0,
+  },
+  {
+    _id: '655c7f20b4140fcb2f2e82ad',
+    employee: {
+      _id: '652919655281b232096b3e98',
+      name: 'Hoang Van E',
+    },
+    workDate: '2023-11-24T00:00:00.000Z',
+    workShift: [
+      {
+        _id: '6528ea8275292954d4e3f3f5',
+        shiftName: 'Ca sáng',
+      },
+      {
+        _id: '652919d55281b232096b3e9e',
+        shiftName: 'Ca chiều',
+      },
+      {
+        _id: '654891fb7ab62b993ca966e3',
+        shiftName: 'Ca tối',
+      },
+    ],
+    createdAt: '2023-11-21T09:57:52.277Z',
+    updatedAt: '2023-11-21T09:57:52.277Z',
+    __v: 0,
+  },
+  {
+    _id: '655c7f20b4140fcb2f2e82af',
+    employee: {
+      _id: '652919655281b232096b3e98',
+      name: 'Hoang Van E',
+    },
+    workDate: '2023-11-26T00:00:00.000Z',
+    workShift: [
+      {
+        _id: '652919d55281b232096b3e9e',
+        shiftName: 'Ca chiều',
+      },
+      {
+        _id: '654891fb7ab62b993ca966e3',
+        shiftName: 'Ca tối',
+      },
+    ],
+    createdAt: '2023-11-21T09:57:52.292Z',
+    updatedAt: '2023-11-21T09:57:52.292Z',
+    __v: 0,
+  },
+];
+
+const schedule = async (req, res) => {
+  const { num, data } = req.body;
+
+  try {
+    // Tạo một đối tượng để theo dõi ca làm việc đã được gán và số lượng nhân viên đã được gán cho mỗi ca
+    let shiftsAssigned = {};
+
+    // Tạo một mảng mới để lưu trữ dữ liệu đã được gán
+    let newData = [];
+
+    // Duyệt qua từng đăng ký ca làm việc
+    for (let i = 0; i < data.length; i++) {
+      let registration = data[i];
+
+      // Duyệt qua từng ca làm việc mà nhân viên này đã đăng ký
+      for (let j = 0; j < registration.workShift.length; j++) {
+        let shift = registration.workShift[j];
+
+        // Kiểm tra xem ca làm việc này đã được gán cho số lượng nhân viên tối đa chưa
+        if (!shiftsAssigned[shift._id] || shiftsAssigned[shift._id] < num) {
+          // Nếu chưa, tạo một đối tượng mới theo schema đã cho và thêm nó vào mảng mới
+          newData.push({
+            workShift: shift._id,
+            employee: registration.employee._id,
+            checkInTime: null,
+            checkOutTime: null,
+            workDate: registration.workDate,
+            status: 'NULL',
+          });
+
+          // Tăng số lượng nhân viên đã được gán cho ca này
+          shiftsAssigned[shift._id] = (shiftsAssigned[shift._id] || 0) + 1;
+
+          // Chỉ gán một ca làm việc cho mỗi nhân viên
+          break;
+        }
+      }
+    }
+
+    // Lưu ca làm đã xếp vào DB
+    for (let i = 0; i < newData.length; i++) {
+      const shiftAttendance = new ShiftAttendanceModel(newData[i]);
+      await shiftAttendance.save();
+    }
+
+    // Trả về mảng mới của các đối tượng đã được gán
+    res.status(200).json({ success: true, message: 'Xếp ca làm thành công' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
 module.exports = {
   createShiftRegistration,
   listShiftRegistrations,
@@ -125,4 +243,5 @@ module.exports = {
   updateShiftRegistration,
   deleteShiftRegistration,
   deleteAll,
+  schedule,
 };

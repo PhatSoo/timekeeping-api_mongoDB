@@ -2,12 +2,11 @@ const { mongoose, Schema, ObjectId } = require('../config/database');
 
 const formRequestSchema = new Schema(
   {
-    employeeId: { type: ObjectId, ref: 'employees' },
-    formTypeId: { type: ObjectId, ref: 'form_types' },
+    employee: { type: ObjectId, ref: 'employees' },
     startDate: Date,
     endDate: Date,
     isFullDay: Boolean,
-    workShiftId: { type: ObjectId, ref: 'work_shifts' },
+    workShift: { type: ObjectId, ref: 'work_shifts' },
     reason: String,
     status: { type: Number, default: 0 },
   },

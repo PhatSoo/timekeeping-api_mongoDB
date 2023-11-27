@@ -1,14 +1,23 @@
 const EmployeeModel = require('../models/employee');
 const utils = require('../utils');
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 
 const createEmployee = async (req, res, next) => {
   let { name, email, password, isPartTime, CCCD, sex, roleId } = req.body;
 
-  if (name === undefined || email === undefined || password === undefined || isPartTime === undefined || CCCD === undefined || sex === undefined || roleId === undefined || phone === undefined) {
+  if (name === undefined || email === undefined || password === undefined || isPartTime === undefined || CCCD === undefined || sex === undefined || roleId === undefined) {
     return res.status(422).json({
       success: false,
       message: 'Missing required params',
+    });
+  }
+
+  if (typeof CCCD !== Number && CCCD.length !== 12) {
+    return res.status(422).json({
+      success: false,
+      message: 'CCCD sai định dạng',
     });
   }
 
@@ -25,7 +34,7 @@ const createEmployee = async (req, res, next) => {
       return res.status(422).json({ success: false, message: 'Email already exists.' });
     }
     const hash = await bcrypt.hash(password, 10);
-    await EmployeeModel.create({ name, email, password: hash, isPartTime, CCCD, sex, roleId, phone });
+    await EmployeeModel.create({ name, email, password: hash, isPartTime, CCCD, sex, roleId });
     res.status(201).json({
       success: true,
       message: 'Create an employee successfully.!',
@@ -37,7 +46,7 @@ const createEmployee = async (req, res, next) => {
 
 const listEmployees = async (req, res, next) => {
   try {
-    const employees = await EmployeeModel.find().populate('roleId', 'typeName');
+    const employees = await EmployeeModel.find().populate('roleId', 'typeName').select(['name', 'CCCD', 'roleId', 'sex', 'email', 'isPartTime', 'avatar']);
     res.status(200).json({
       success: true,
       data: employees,
@@ -76,15 +85,11 @@ const getEmployee = async (req, res) => {
 };
 
 const updateEmployee = async (req, res) => {
-  const { id } = req.params;
   const updates = req.body;
+  const id = req.body._id;
 
   if (updates.email && !utils.validateEmail(updates.email)) {
     return res.status(422).json({ success: false, message: 'Email is not validate.' });
-  }
-
-  if (updates.CCCD && (typeof updates.CCCD !== 'string' || updates.CCCD.length !== 12)) {
-    return res.status(422).json({ success: false, message: 'CCCD is illegal.' });
   }
 
   if (updates.phone && updates.phone.length !== 10) {
@@ -92,7 +97,7 @@ const updateEmployee = async (req, res) => {
   }
 
   try {
-    const employee = await EmployeeModel.findById(id);
+    const employee = await EmployeeModel.findById(updates._id);
     if (!employee) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy nhân viên.' });
     }
@@ -120,7 +125,7 @@ const updateEmployee = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
 
-    res.status(204).end();
+    res.status(201).json({ success: true, message: 'Update Employee successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
@@ -130,11 +135,41 @@ const deleteEmployee = async (req, res) => {
   const { id } = req.params;
 
   try {
+    const existingEmployee = await EmployeeModel.findById(id).select('avatar');
+
     const deletedEmployee = await EmployeeModel.findByIdAndDelete(id);
     if (!deletedEmployee) {
       return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
-    res.status(204).end();
+
+    if (existingEmployee.avatar) {
+      fs.unlink(path.join(path.join(process.cwd(), 'uploads/avatars', existingEmployee.avatar)), (err) => {});
+    }
+    res.status(200).json({ success: true, message: `Employee deleted with ID: ${id}` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
+const deleteEmployeeMultiple = async (req, res) => {
+  const { data } = req.body;
+
+  try {
+    const documentsToDelete = await EmployeeModel.find({ _id: { $in: data } });
+
+    documentsToDelete.forEach(async (document) => {
+      if (document.avatar) {
+        fs.unlink(path.join(path.join(process.cwd(), 'uploads/avatars', document.avatar)), (err) => {});
+      }
+    });
+
+    const result = await EmployeeModel.deleteMany({ _id: { $in: data } });
+
+    if (result.deletedCount > 0) {
+      res.status(200).json({ success: true, message: `Employees deleted successfully` });
+    } else {
+      res.status(404).json({ success: false, message: 'Không tìm thấy bản ghi để xóa' });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
@@ -147,4 +182,5 @@ module.exports = {
   getEmployee,
   updateEmployee,
   deleteEmployee,
+  deleteEmployeeMultiple,
 };

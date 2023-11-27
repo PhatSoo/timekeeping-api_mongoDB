@@ -71,8 +71,7 @@ const getCurrentShift = async (req, res) => {
 };
 
 const updateWorkShift = async (req, res) => {
-  const { id } = req.params;
-  const { shiftName, startTime, endTime } = req.body;
+  const { _id, shiftName, startTime, endTime } = req.body;
 
   if (!shiftName && !startTime && !endTime) {
     return res.status(422).json({ success: false, message: 'shiftName, startTime and endTime are required.' });
@@ -82,38 +81,30 @@ const updateWorkShift = async (req, res) => {
     return res.status(422).json({ success: false, message: 'shiftName must be a string.' });
   }
 
-  if (startTime && typeof startTime !== 'number') {
-    return res.status(422).json({ success: false, message: 'startTime must be numbers.' });
-  }
-
-  if (endTime && typeof endTime !== 'number') {
-    return res.status(422).json({ success: false, message: 'endTime must be numbers.' });
-  }
-
   try {
-    const existingWorkShift = await WorkShiftModel.findOne({ shiftName, _id: { $ne: id } });
+    const existingWorkShift = await WorkShiftModel.findOne({ shiftName, _id });
     if (existingWorkShift) {
       return res.status(422).json({ success: false, message: 'WorkShift already exists.' });
     }
-    const updatedWorkShift = await WorkShiftModel.findByIdAndUpdate(id, { shiftName, startTime, endTime }, { new: true });
+    const updatedWorkShift = await WorkShiftModel.findByIdAndUpdate(_id, { shiftName, startTime, endTime }, { new: true });
     if (!updatedWorkShift) {
       return res.status(404).json({ success: false, message: 'WorkShift not found.' });
     }
-    res.status(204).end();
+    res.status(201).json({ success: true, message: 'Update Shift successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
 };
 
 const deleteWorkShift = async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.body;
 
   try {
     const deletedWorkShift = await WorkShiftModel.findByIdAndDelete(id);
     if (!deletedWorkShift) {
       return res.status(404).json({ success: false, message: 'WorkShift not found.' });
     }
-    res.status(204).end();
+    res.status(200).json({ success: true, message: `Shift deleted with ID: ${id}` });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
