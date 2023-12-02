@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 
 const createEmployee = async (req, res, next) => {
-  let { name, email, password, isPartTime, CCCD, sex, roleId } = req.body;
+  let { name, email, password, isPartTime, CCCD, sex, role } = req.body;
 
-  if (name === undefined || email === undefined || password === undefined || isPartTime === undefined || CCCD === undefined || sex === undefined || roleId === undefined) {
+  if (name === undefined || email === undefined || password === undefined || isPartTime === undefined || CCCD === undefined || sex === undefined || role === undefined) {
     return res.status(422).json({
       success: false,
       message: 'Missing required params',
@@ -34,7 +34,7 @@ const createEmployee = async (req, res, next) => {
       return res.status(422).json({ success: false, message: 'Email already exists.' });
     }
     const hash = await bcrypt.hash(password, 10);
-    await EmployeeModel.create({ name, email, password: hash, isPartTime, CCCD, sex, roleId });
+    await EmployeeModel.create({ name, email, password: hash, isPartTime, CCCD, sex, role });
     res.status(201).json({
       success: true,
       message: 'Create an employee successfully.!',
@@ -46,7 +46,7 @@ const createEmployee = async (req, res, next) => {
 
 const listEmployees = async (req, res, next) => {
   try {
-    const employees = await EmployeeModel.find().populate('roleId', 'typeName').select(['name', 'CCCD', 'roleId', 'sex', 'email', 'isPartTime', 'avatar']);
+    const employees = await EmployeeModel.find().populate('role', 'typeName').select(['name', 'CCCD', 'role', 'sex', 'email', 'isPartTime', 'avatar']);
     res.status(200).json({
       success: true,
       data: employees,
@@ -60,7 +60,7 @@ const listEmployees = async (req, res, next) => {
 const listEmployeesPartTime = async (req, res, next) => {
   const { isPartTime } = req.params;
   try {
-    const employees = await EmployeeModel.find({ isPartTime }).populate('roleId', 'typeName');
+    const employees = await EmployeeModel.find({ isPartTime }).populate('role', 'typeName');
     res.status(200).json({
       success: true,
       data: employees,
@@ -74,7 +74,7 @@ const getEmployee = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const employee = await EmployeeModel.findById(id).populate('roleId', 'typeName');
+    const employee = await EmployeeModel.findById(id).populate('role', 'typeName');
     if (!employee) {
       return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
@@ -131,6 +131,24 @@ const updateEmployee = async (req, res) => {
   }
 };
 
+const resetPassword = async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    const defaultPassword = '123456789';
+    const password = await bcrypt.hash(defaultPassword, 10);
+
+    const updatedEmployee = await EmployeeModel.findByIdAndUpdate(id, { password }, { new: true });
+    if (!updatedEmployee) {
+      return res.status(404).json({ success: false, message: 'Employee not found.' });
+    }
+
+    res.status(201).json({ success: true, message: 'Reset Employee Password successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
+  }
+};
+
 const deleteEmployee = async (req, res) => {
   const { id } = req.params;
 
@@ -181,6 +199,7 @@ module.exports = {
   listEmployeesPartTime,
   getEmployee,
   updateEmployee,
+  resetPassword,
   deleteEmployee,
   deleteEmployeeMultiple,
 };

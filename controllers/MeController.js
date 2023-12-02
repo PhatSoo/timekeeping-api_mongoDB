@@ -1,6 +1,6 @@
 const EmployeeModel = require('../models/employee');
 const ShiftRegistrationModel = require('../models/shiftregistration');
-const ShiftAttendanceModel = require('../models/shiftattendance');
+// const ShiftAttendanceModel = require('../models/shiftattendance');
 const AttendanceModel = require('../models/attendance');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -9,13 +9,14 @@ const { mongoose } = require('../config/database');
 const fs = require('fs');
 const path = require('path');
 const { get_current_time_format } = require('../utils');
+const { compare2Images } = require('../middlewares/Compare2Faces');
 
 // Get info user
 const getMe = async (req, res) => {
   const id = req.userId;
 
   try {
-    const employee = await EmployeeModel.findById(id).populate('roleId', 'typeName');
+    const employee = await EmployeeModel.findById(id).populate('role', 'typeName');
     if (!employee) {
       return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
@@ -135,8 +136,6 @@ const uploadImage = async (req, res) => {
       oldImage = employee.image;
     }
 
-    console.log(oldImage);
-
     const result = await EmployeeModel.findByIdAndUpdate(id, { image: file.filename }, { new: true });
     if (!result) {
       return res.status(404).json({ success: false, message: 'Update Failed' });
@@ -176,97 +175,47 @@ const getSchedule = async (req, res) => {
 const getAttendance = async (req, res) => {
   const employeeID = req.userId;
   try {
-    const employee = await EmployeeModel.findById(employeeID);
     let result = {};
-    if (employee.isPartTime) {
-      result = await ShiftAttendanceModel.aggregate([
-        {
-          $lookup: {
-            from: 'shift_registrations',
-            localField: 'shiftRegistration',
-            foreignField: '_id',
-            as: 'shiftRegistration',
-          },
+
+    // const asd = await AttendanceModel.find({ employee: employee._id });
+    // return res.status(200).json(asd);
+
+    result = await AttendanceModel.aggregate([
+      {
+        $lookup: {
+          from: 'employees',
+          localField: 'employee',
+          foreignField: '_id',
+          as: 'employee',
         },
-        { $unwind: '$shiftRegistration' },
-        {
-          $lookup: {
-            from: 'employees',
-            localField: 'shiftRegistration.employee',
-            foreignField: '_id',
-            as: 'employee',
-          },
+      },
+      { $unwind: '$employee' },
+      {
+        $lookup: {
+          from: 'work_shifts',
+          localField: 'workShift',
+          foreignField: '_id',
+          as: 'workShift',
         },
-        { $unwind: '$employee' },
-        {
-          $lookup: {
-            from: 'work_shifts',
-            localField: 'shiftRegistration.workShift',
-            foreignField: '_id',
-            as: 'workShift',
-          },
+      },
+      { $unwind: { path: '$workShift', preserveNullAndEmptyArrays: true } },
+      {
+        $match: {
+          'employee._id': new mongoose.Types.ObjectId(employeeID),
         },
-        { $unwind: '$workShift' },
-        {
-          $match: {
-            'employee._id': new mongoose.Types.ObjectId(employeeID),
-          },
+      },
+      {
+        $project: {
+          workDate: 1,
+          workShift: { shiftName: 1 },
+          checkInTime: 1,
+          checkOutTime: 1,
+          // checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime' } },
+          // checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime' } },
+          status: 1,
         },
-        {
-          $project: {
-            shiftRegistration: { workDate: 1 },
-            workShift: { shiftName: 1 },
-            checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime', timezone: process.env.TZ } },
-            checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime', timezone: process.env.TZ } },
-            status: 1,
-          },
-        },
-      ]);
-    } else {
-      result = await AttendanceModel.aggregate([
-        {
-          $lookup: {
-            from: 'shift_registrations',
-            localField: 'shiftRegistration',
-            foreignField: '_id',
-            as: 'shiftRegistration',
-          },
-        },
-        { $unwind: '$shiftRegistration' },
-        {
-          $lookup: {
-            from: 'employees',
-            localField: 'shiftRegistration.employee',
-            foreignField: '_id',
-            as: 'employee',
-          },
-        },
-        { $unwind: '$employee' },
-        {
-          $lookup: {
-            from: 'work_shifts',
-            localField: 'shiftRegistration.workShift',
-            foreignField: '_id',
-            as: 'workShift',
-          },
-        },
-        { $unwind: '$workShift' },
-        {
-          $match: {
-            'employee._id': new mongoose.Types.ObjectId(employeeID),
-          },
-        },
-        {
-          $project: {
-            shiftRegistration: { workDate: 1 },
-            workShift: { shiftName: 1 },
-            checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime' } },
-            checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime' } },
-            status: 1,
-          },
-        },
-      ]);
-    }
+      },
+    ]);
 
     res.status(200).json({
       success: true,
@@ -297,26 +246,17 @@ const getExistingShiftInCurrent = async (req, res) => {
   const id = req.userId;
   // current shift id get from URL
   const { shiftId } = req.params;
-  // const currentDate = new Date('2023-11-16T00:00:00.000Z');
+
   const currentDate = new Date();
   currentDate.setUTCHours(0, 0, 0, 0);
 
   try {
     const shifts = (
-      await ShiftAttendanceModel.aggregate([
-        {
-          $lookup: {
-            from: 'shift_registrations',
-            localField: 'shiftRegistration',
-            foreignField: '_id',
-            as: 'shiftRegistration',
-          },
-        },
-        { $unwind: '$shiftRegistration' },
+      await AttendanceModel.aggregate([
         {
           $lookup: {
             from: 'employees',
-            localField: 'shiftRegistration.employee',
+            localField: 'employee',
             foreignField: '_id',
             as: 'employee',
           },
@@ -325,22 +265,21 @@ const getExistingShiftInCurrent = async (req, res) => {
         {
           $lookup: {
             from: 'work_shifts',
-            localField: 'shiftRegistration.workShift',
+            localField: 'workShift',
             foreignField: '_id',
             as: 'workShift',
           },
         },
-        { $unwind: '$workShift' },
+        { $unwind: { path: '$workShift', preserveNullAndEmptyArrays: true } },
         {
           $match: {
             'employee._id': new mongoose.Types.ObjectId(id),
-            'workShift._id': new mongoose.Types.ObjectId(shiftId),
-            'shiftRegistration.workDate': currentDate,
+            workDate: currentDate,
+            'workShift._id': shiftId === 'null' ? null : new mongoose.Types.ObjectId(shiftId),
           },
         },
         {
           $project: {
-            shiftRegistration: 1,
             employee: { _id: 1, name: 1 },
             workShift: { shiftName: 1, startTime: 1, endTime: 1 },
             checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime', timezone: process.env.TZ } },
@@ -365,18 +304,29 @@ const getExistingShiftInCurrent = async (req, res) => {
 
 const check = async (req, res) => {
   const { checkType, attendanceId } = req.body;
+  const employeeID = req.userId;
 
   try {
-    let check = false;
-    if (checkType === 'CheckIn') {
-      await ShiftAttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING' });
-      check = true;
-    } else {
-      await ShiftAttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE' });
-      check = true;
-    }
+    const currentEmployee = await EmployeeModel.findById(employeeID).select('avatar');
+    const employeeImage = currentEmployee.avatar;
+    const captureImage = req.file.path;
+    const result = await compare2Images(employeeImage, captureImage);
+    console.log(result);
+    // let check = false;
+    // if (checkType === 'CheckIn') {
+    //   await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING' });
+    //   check = true;
+    // } else {
+    //   await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE' });
+    //   check = true;
+    // }
 
-    if (check) {
+    if (result) {
+      if (checkType === 'CheckIn') {
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING' });
+      } else {
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE' });
+      }
       return res.status(200).json({ success: true });
     }
 

@@ -22,12 +22,21 @@ const listAttendances = async (req, res) => {
 };
 
 const getAttendanceByDate = async (req, res) => {
-  const { date } = req.params;
+  const { date, workShiftID } = req.params;
+
   try {
-    const attendance = await AttendanceModel.find({ workDate: new Date(date) });
+    let attendance;
+
+    if (workShiftID !== 'false') {
+      attendance = await AttendanceModel.find({ workDate: new Date(date) }).populate('workShift', 'shiftName');
+    } else {
+      attendance = await AttendanceModel.find({ workDate: new Date(date) });
+    }
+
     if (!attendance) {
       return res.status(404).json({ success: false, message: 'Attendance not found.' });
     }
+
     res.status(200).json({ success: true, data: attendance, total: attendance.length });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });

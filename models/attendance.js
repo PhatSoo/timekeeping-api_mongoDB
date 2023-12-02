@@ -1,11 +1,22 @@
 const { mongoose, Schema, ObjectId } = require('../config/database');
 
 const AttendanceSchema = new Schema({
-  checkInTime: Date,
-  checkOutTime: Date,
-  status: Number,
-  employeeId: { type: ObjectId, ref: 'employees' },
+  employee: { type: ObjectId, ref: 'employees' },
+  checkInTime: { type: Date, default: null },
+  checkOutTime: { type: Date, default: null },
   workDate: Date,
+  workShift: { type: ObjectId, ref: 'work_shifts', default: null },
+  status: {
+    type: String,
+    enum: ['NULL', 'ON LEAVE', 'WORKING', 'DONE'],
+    default: 'NULL',
+  },
 });
+
+/*
+  'NULL': Mặc định.
+  'WORKING': Nhân viên đang làm việc.
+  'DONE': Hoàn thành.
+*/
 
 module.exports = mongoose.model('attendances', AttendanceSchema);

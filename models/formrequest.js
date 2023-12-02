@@ -5,10 +5,13 @@ const formRequestSchema = new Schema(
     employee: { type: ObjectId, ref: 'employees' },
     startDate: Date,
     endDate: Date,
-    isFullDay: Boolean,
     workShift: { type: ObjectId, ref: 'work_shifts' },
     reason: String,
-    status: { type: Number, default: 0 },
+    status: {
+      type: String,
+      enum: ['PENDING', 'ACCEPTED', 'DENIED'],
+      default: 'PENDING',
+    },
   },
   {
     timestamps: true,

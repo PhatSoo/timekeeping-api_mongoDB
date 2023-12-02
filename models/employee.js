@@ -9,9 +9,8 @@ const employeeSchema = new Schema(
     CCCD: Number,
     sex: Boolean,
     phone: String,
-    image: String,
     avatar: String,
-    roleId: {
+    role: {
       type: ObjectId,
       ref: 'roles',
     },

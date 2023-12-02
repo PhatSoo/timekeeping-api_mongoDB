@@ -71,7 +71,7 @@ const getAttendanceByDate = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
-};
+}; // done clear
 
 const getShiftAttendance = async (req, res) => {
   const { id } = req.params;

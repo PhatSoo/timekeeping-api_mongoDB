@@ -1,5 +1,6 @@
 const ShiftRegistration = require('../models/shiftregistration');
-const ShiftAttendanceModel = require('../models/shiftattendance');
+// const ShiftAttendanceModel = require('../models/shiftattendance');
+const AttendanceModel = require('../models/attendance');
 const WorkShift = require('../models/workshift');
 
 const createShiftRegistration = async (req, res) => {
@@ -54,8 +55,24 @@ const createShiftRegistration = async (req, res) => {
 };
 
 const listShiftRegistrations = async (req, res) => {
+  const { date } = req.params;
+  const dateTimeZone = `${date}T00:00:00.000+07:00`;
+  const day = new Date(dateTimeZone);
+
+  getDay = (d, add) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay() + add));
+
+  monday = getDay(day, 1);
+  sunday = getDay(day, 7);
+
   try {
-    const shiftRegistration = await ShiftRegistration.find().populate('employee', 'name').populate('workShift', 'shiftName');
+    const shiftRegistration = await ShiftRegistration.find({
+      workDate: {
+        $gte: monday,
+        $lte: sunday,
+      },
+    })
+      .populate('employee', 'name')
+      .populate('workShift', 'shiftName');
     res.status(200).json({
       success: true,
       data: shiftRegistration,
@@ -118,118 +135,46 @@ const deleteAll = async (req, res) => {
   }
 };
 
-const data = [
-  {
-    _id: '655c7f20b4140fcb2f2e82a9',
-    employee: {
-      _id: '652919655281b232096b3e98',
-      name: 'Hoang Van E',
-    },
-    workDate: '2023-11-22T00:00:00.000Z',
-    workShift: [
-      {
-        _id: '6528ea8275292954d4e3f3f5',
-        shiftName: 'Ca sáng',
-      },
-    ],
-    createdAt: '2023-11-21T09:57:52.036Z',
-    updatedAt: '2023-11-21T09:57:52.036Z',
-    __v: 0,
-  },
-  {
-    _id: '655c7f20b4140fcb2f2e82ad',
-    employee: {
-      _id: '652919655281b232096b3e98',
-      name: 'Hoang Van E',
-    },
-    workDate: '2023-11-24T00:00:00.000Z',
-    workShift: [
-      {
-        _id: '6528ea8275292954d4e3f3f5',
-        shiftName: 'Ca sáng',
-      },
-      {
-        _id: '652919d55281b232096b3e9e',
-        shiftName: 'Ca chiều',
-      },
-      {
-        _id: '654891fb7ab62b993ca966e3',
-        shiftName: 'Ca tối',
-      },
-    ],
-    createdAt: '2023-11-21T09:57:52.277Z',
-    updatedAt: '2023-11-21T09:57:52.277Z',
-    __v: 0,
-  },
-  {
-    _id: '655c7f20b4140fcb2f2e82af',
-    employee: {
-      _id: '652919655281b232096b3e98',
-      name: 'Hoang Van E',
-    },
-    workDate: '2023-11-26T00:00:00.000Z',
-    workShift: [
-      {
-        _id: '652919d55281b232096b3e9e',
-        shiftName: 'Ca chiều',
-      },
-      {
-        _id: '654891fb7ab62b993ca966e3',
-        shiftName: 'Ca tối',
-      },
-    ],
-    createdAt: '2023-11-21T09:57:52.292Z',
-    updatedAt: '2023-11-21T09:57:52.292Z',
-    __v: 0,
-  },
-];
-
 const schedule = async (req, res) => {
   const { num, data } = req.body;
 
   try {
-    // Tạo một đối tượng để theo dõi ca làm việc đã được gán và số lượng nhân viên đã được gán cho mỗi ca
     let shiftsAssigned = {};
+    let scheduledShifts = {}; // Đối tượng để theo dõi các ca làm việc đã được xếp lịch cho mỗi người
 
-    // Tạo một mảng mới để lưu trữ dữ liệu đã được gán
-    let newData = [];
-
-    // Duyệt qua từng đăng ký ca làm việc
     for (let i = 0; i < data.length; i++) {
       let registration = data[i];
 
-      // Duyệt qua từng ca làm việc mà nhân viên này đã đăng ký
+      if (!scheduledShifts[registration.employee._id]) {
+        scheduledShifts[registration.employee._id] = [];
+      }
+
       for (let j = 0; j < registration.workShift.length; j++) {
         let shift = registration.workShift[j];
 
-        // Kiểm tra xem ca làm việc này đã được gán cho số lượng nhân viên tối đa chưa
-        if (!shiftsAssigned[shift._id] || shiftsAssigned[shift._id] < num) {
-          // Nếu chưa, tạo một đối tượng mới theo schema đã cho và thêm nó vào mảng mới
-          newData.push({
+        // Kiểm tra xem nhân viên đã được xếp lịch cho ca làm việc này chưa
+        if ((!shiftsAssigned[shift._id] || shiftsAssigned[shift._id] < num) && !scheduledShifts[registration.employee._id].includes(shift._id)) {
+          // Thêm vào danh sách ca làm việc đã xếp cho nhân viên và danh sách ca làm việc đã được xếp
+          scheduledShifts[registration.employee._id].push(shift._id);
+          shiftsAssigned[shift._id] = (shiftsAssigned[shift._id] || 0) + 1;
+
+          // Thêm ca làm việc vào danh sách mới
+          const newShift = {
             workShift: shift._id,
             employee: registration.employee._id,
             checkInTime: null,
             checkOutTime: null,
             workDate: registration.workDate,
             status: 'NULL',
-          });
-
-          // Tăng số lượng nhân viên đã được gán cho ca này
-          shiftsAssigned[shift._id] = (shiftsAssigned[shift._id] || 0) + 1;
-
-          // Chỉ gán một ca làm việc cho mỗi nhân viên
-          break;
+          };
+          // Lưu vào DB
+          const attendance = new AttendanceModel(newShift);
+          await attendance.save();
+          break; // Chỉ xếp lịch cho 1 ca làm việc cho mỗi nhân viên
         }
       }
     }
 
-    // Lưu ca làm đã xếp vào DB
-    for (let i = 0; i < newData.length; i++) {
-      const shiftAttendance = new ShiftAttendanceModel(newData[i]);
-      await shiftAttendance.save();
-    }
-
-    // Trả về mảng mới của các đối tượng đã được gán
     res.status(200).json({ success: true, message: 'Xếp ca làm thành công' });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });

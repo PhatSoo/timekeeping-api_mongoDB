@@ -21,6 +21,7 @@ const APIRoute = (app) => {
   router.get('/employee', EmployeeController.listEmployees);
   router.post('/employee', EmployeeController.createEmployee);
   router.put('/employee', EmployeeController.updateEmployee);
+  router.patch('/employee', EmployeeController.resetPassword);
   router.delete('/employee/:id', EmployeeController.deleteEmployee);
   router.delete('/employee', EmployeeController.deleteEmployeeMultiple);
 
@@ -51,9 +52,10 @@ const APIRoute = (app) => {
 
   // Form Requests
   router.get('/form-request', FormRequestController.listFormRequests);
+  router.get('/form-request/pending', FormRequestController.listFormRequestsPending);
   router.get('/form-request/:id', FormRequestController.getFormRequest);
   router.post('/form-request', FormRequestController.createFormRequest);
-  router.put('/form-request/:id', FormRequestController.updateFormRequest);
+  router.put('/form-request', FormRequestController.updateFormRequest);
   router.delete('/form-request/:id', FormRequestController.deleteFormRequest);
 
   // Work Days ????
@@ -65,14 +67,14 @@ const APIRoute = (app) => {
 
   // Attendances for full-time
   router.get('/attendance', AttendanceController.listAttendances);
-  router.get('/attendance/date/:date', AttendanceController.getAttendanceByDate);
+  router.get('/attendance/date/:date/:workShiftID?', AttendanceController.getAttendanceByDate);
   router.get('/attendance/:id', AttendanceController.getAttendance);
   router.post('/attendance', AttendanceController.createAttendance);
   router.put('/attendance/:id', AttendanceController.updateAttendance);
   router.delete('/attendance/:id', AttendanceController.deleteAttendance);
 
   // Attendances for part-time
-  router.get('/shift-schedule', ShiftScheduleController.listShiftRegistrations);
+  router.get('/shift-schedule/date/:date', ShiftScheduleController.listShiftRegistrations);
   router.get('/shift-schedule/user/:id', ShiftScheduleController.getShiftRegistrationByID);
   router.get('/shift-schedule/:id', ShiftScheduleController.getShiftRegistrationByID);
   router.post('/shift-schedule/schedule', ShiftScheduleController.schedule);
@@ -82,15 +84,15 @@ const APIRoute = (app) => {
   router.delete('/shift-schedule/:id', ShiftScheduleController.deleteShiftRegistration);
 
   // Attendances for part-time
-  router.get('/shift-attendance', ShiftAttendanceController.listShiftAttendances);
-  router.get('/shift-attendance/date/:date', ShiftAttendanceController.getAttendanceByDate);
-  router.get('/shift-attendance/:id', ShiftAttendanceController.getShiftAttendance);
-  router.post('/shift-attendance', ShiftAttendanceController.createShiftAttendance);
-  router.put('/shift-attendance/:id', ShiftAttendanceController.updateShiftAttendance);
-  router.delete('/shift-attendance/all', ShiftAttendanceController.deleteAll);
-  router.delete('/shift-attendance/:id', ShiftAttendanceController.deleteShiftAttendance);
+  // router.get('/shift-attendance', ShiftAttendanceController.listShiftAttendances);
+  // router.get('/shift-attendance/date/:date', ShiftAttendanceController.getAttendanceByDate);
+  // router.get('/shift-attendance/:id', ShiftAttendanceController.getShiftAttendance);
+  // router.post('/shift-attendance', ShiftAttendanceController.createShiftAttendance);
+  // router.put('/shift-attendance/:id', ShiftAttendanceController.updateShiftAttendance);
+  // router.delete('/shift-attendance/all', ShiftAttendanceController.deleteAll);
+  // router.delete('/shift-attendance/:id', ShiftAttendanceController.deleteShiftAttendance);
 
-  return app.use('/api/', router);
+  return app.use('/api/', authenticate, router);
 };
-// , authenticate
+//
 module.exports = APIRoute;
