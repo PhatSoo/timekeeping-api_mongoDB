@@ -9,7 +9,6 @@ const FormTypeController = require('../controllers/FormTypeController');
 const FormRequestController = require('../controllers/FormRequestController');
 const AttendanceController = require('../controllers/AttendanceController');
 const ShiftScheduleController = require('../controllers/ShiftSchedule');
-const ShiftAttendanceController = require('../controllers/ShiftAttendanceController');
 const WorkDayController = require('../controllers/WorkDayController');
 const UploadController = require('../controllers/UploadController');
 const authenticate = require('../middlewares/CheckLogin');
@@ -82,15 +81,6 @@ const APIRoute = (app) => {
   router.put('/shift-schedule/:id', ShiftScheduleController.updateShiftRegistration);
   router.delete('/shift-schedule/all', ShiftScheduleController.deleteAll);
   router.delete('/shift-schedule/:id', ShiftScheduleController.deleteShiftRegistration);
-
-  // Attendances for part-time
-  // router.get('/shift-attendance', ShiftAttendanceController.listShiftAttendances);
-  // router.get('/shift-attendance/date/:date', ShiftAttendanceController.getAttendanceByDate);
-  // router.get('/shift-attendance/:id', ShiftAttendanceController.getShiftAttendance);
-  // router.post('/shift-attendance', ShiftAttendanceController.createShiftAttendance);
-  // router.put('/shift-attendance/:id', ShiftAttendanceController.updateShiftAttendance);
-  // router.delete('/shift-attendance/all', ShiftAttendanceController.deleteAll);
-  // router.delete('/shift-attendance/:id', ShiftAttendanceController.deleteShiftAttendance);
 
   return app.use('/api/', authenticate, router);
 };

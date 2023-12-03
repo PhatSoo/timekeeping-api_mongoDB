@@ -3,7 +3,9 @@ const { mongoose, Schema, ObjectId } = require('../config/database');
 const AttendanceSchema = new Schema({
   employee: { type: ObjectId, ref: 'employees' },
   checkInTime: { type: Date, default: null },
+  checkInImage: String,
   checkOutTime: { type: Date, default: null },
+  checkOutImage: String,
   workDate: Date,
   workShift: { type: ObjectId, ref: 'work_shifts', default: null },
   status: {

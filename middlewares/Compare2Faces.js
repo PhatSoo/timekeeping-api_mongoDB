@@ -1,6 +1,5 @@
 const canvas = require('canvas');
 const { Image, Canvas } = canvas;
-const fs = require('fs');
 const sharp = require('sharp');
 const face_api = require('face-api.js');
 const path = require('path');
@@ -14,7 +13,7 @@ const loadingModels = async () => {
   await face_api.nets.tinyFaceDetector.loadFromDisk('./ai_models');
 };
 
-const convert2PNG = async (apiEndpoint) => {
+const convert2PNGinLocal = async (apiEndpoint) => {
   return sharp(apiEndpoint)
     .png()
     .rotate()
@@ -29,16 +28,32 @@ const convert2PNG = async (apiEndpoint) => {
     });
 };
 
-const compare2Images = async (imageName1, imageName2) => {
+const convert2PNGinCloud = (apiEndpoint) => {
+  return fetch(apiEndpoint)
+    .then((response) => response.blob())
+    .then(async (blob) =>
+      sharp(await blob.arrayBuffer())
+        .png()
+        .rotate()
+        .toBuffer()
+    )
+    .then(async (pngBuffer) => {
+      const img = await canvas.loadImage(pngBuffer);
+      const imgDetection = await face_api.detectSingleFace(img, new face_api.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+      if (imgDetection) {
+        return imgDetection.descriptor;
+      }
+      return null;
+    });
+};
+
+const compare2Images = async (employeeImage, captureImage) => {
   // Load face recognition models
   await loadingModels();
 
-  const imageURL1 = path.join(process.cwd(), 'uploads', 'avatars', imageName1);
-  const imageURL2 = path.join(process.cwd(), imageName2);
-
   try {
-    const image1 = await convert2PNG(imageURL1);
-    const image2 = await convert2PNG(imageURL2);
+    const image1 = await convert2PNGinCloud(employeeImage, captureImage);
+    const image2 = await convert2PNGinLocal(path.join(process.cwd(), captureImage));
 
     if (image1 && image2) {
       const distance = face_api.euclideanDistance(image1, image2);

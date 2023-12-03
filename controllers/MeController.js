@@ -1,15 +1,13 @@
 const EmployeeModel = require('../models/employee');
 const ShiftRegistrationModel = require('../models/shiftregistration');
-// const ShiftAttendanceModel = require('../models/shiftattendance');
 const AttendanceModel = require('../models/attendance');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 require('dotenv/config');
 const { mongoose } = require('../config/database');
 const fs = require('fs');
 const path = require('path');
-const { get_current_time_format } = require('../utils');
 const { compare2Images } = require('../middlewares/Compare2Faces');
+const { cloudinaryUploader } = require('../config/cloudinary');
 
 // Get info user
 const getMe = async (req, res) => {
@@ -305,28 +303,24 @@ const getExistingShiftInCurrent = async (req, res) => {
 const check = async (req, res) => {
   const { checkType, attendanceId } = req.body;
   const employeeID = req.userId;
+  const file = req.file;
 
   try {
     const currentEmployee = await EmployeeModel.findById(employeeID).select('avatar');
     const employeeImage = currentEmployee.avatar;
     const captureImage = req.file.path;
+
     const result = await compare2Images(employeeImage, captureImage);
-    console.log(result);
-    // let check = false;
-    // if (checkType === 'CheckIn') {
-    //   await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING' });
-    //   check = true;
-    // } else {
-    //   await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE' });
-    //   check = true;
-    // }
 
     if (result) {
+      const imageCheck = await cloudinaryUploader(file, 'attendances');
       if (checkType === 'CheckIn') {
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING' });
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING', checkInImage: imageCheck.url });
       } else {
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE' });
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE', checkOutImage: imageCheck.url });
       }
+
+      fs.unlink(path.join(path.join(process.cwd(), 'uploads', file.filename)), (err) => {});
       return res.status(200).json({ success: true });
     }
 

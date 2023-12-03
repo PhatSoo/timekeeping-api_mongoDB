@@ -1,10 +1,10 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-
+// Storage for local
 const storageAvatar = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, './uploads/avatars');
+    cb(null, './uploads');
   },
   filename: (req, file, cb) => {
     const { _id } = req.body;
@@ -12,6 +12,17 @@ const storageAvatar = multer.diskStorage({
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
     cb(null, 'AV-' + _id + '-' + uniqueSuffix + extension);
+  },
+});
+
+const storageAttendance = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const extension = path.extname(file.originalname);
+    cb(null, 'AT-' + req.userId + '-' + uniqueSuffix + extension);
   },
 });
 
@@ -28,31 +39,6 @@ const uploadAvatar = multer({
 
       cb(null, false);
     }
-  },
-});
-
-const storageAttendance = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = './uploads/attendances/';
-
-    const date = new Date();
-    const options = { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' };
-    const dateString = date.toLocaleDateString('vi-VN', options);
-    const currentDate = dateString.split('/').join('-');
-
-    const folderPath = path.join(uploadPath, currentDate);
-
-    // Kiểm tra xem thư mục tồn tại hay không, nếu không tồn tại thì tạo mới
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true });
-    }
-
-    cb(null, folderPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const extension = path.extname(file.originalname);
-    cb(null, 'AT-' + req.userId + '-' + uniqueSuffix + extension);
   },
 });
 
