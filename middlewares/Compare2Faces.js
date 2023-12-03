@@ -59,11 +59,11 @@ const compare2Images = async (employeeImage, captureImage) => {
       const distance = face_api.euclideanDistance(image1, image2);
 
       if (distance < 0.5) {
-        return true;
+        return distance;
       }
     }
 
-    return false;
+    return -1;
   } catch (error) {
     console.error(error);
   }

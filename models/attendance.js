@@ -4,8 +4,10 @@ const AttendanceSchema = new Schema({
   employee: { type: ObjectId, ref: 'employees' },
   checkInTime: { type: Date, default: null },
   checkInImage: String,
+  scoreIn: Number,
   checkOutTime: { type: Date, default: null },
   checkOutImage: String,
+  scoreOut: Number,
   workDate: Date,
   workShift: { type: ObjectId, ref: 'work_shifts', default: null },
   status: {

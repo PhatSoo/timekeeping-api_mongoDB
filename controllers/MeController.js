@@ -312,12 +312,12 @@ const check = async (req, res) => {
 
     const result = await compare2Images(employeeImage, captureImage);
 
-    if (result) {
+    if (result !== -1) {
       const imageCheck = await cloudinaryUploader(file, 'attendances');
       if (checkType === 'CheckIn') {
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING', checkInImage: imageCheck.url });
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING', checkInImage: imageCheck.url, scoreIn: result });
       } else {
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE', checkOutImage: imageCheck.url });
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE', checkOutImage: imageCheck.url, scoreOute: result });
       }
 
       fs.unlink(path.join(path.join(process.cwd(), 'uploads', file.filename)), (err) => {});
