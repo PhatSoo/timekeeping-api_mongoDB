@@ -1,14 +1,16 @@
 const FormRequestModel = require('../models/formrequest');
+const AttendanceModel = require('../models/attendance');
+const { mongoose } = require('../config/database');
 
 const createFormRequest = async (req, res) => {
-  const { startDate, endDate, reason, status, employee, workShift } = req.body;
+  const { startDate, endDate, reason, status, employee } = req.body;
 
   if (!startDate || !endDate || !reason) {
     return res.status(422).json({ success: false, message: 'startDate, endDate, reason are required.' });
   }
 
   try {
-    const newFormRequest = new FormRequestModel({ startDate, endDate, reason, status, employee, workShift });
+    const newFormRequest = new FormRequestModel({ startDate, endDate, reason, status, employee });
     await newFormRequest.save();
     res.status(201).json({ success: true, message: `FormRequest added with ID: ${newFormRequest.id}` });
   } catch (error) {
@@ -18,7 +20,7 @@ const createFormRequest = async (req, res) => {
 
 const listFormRequests = async (req, res) => {
   try {
-    const results = await FormRequestModel.find().populate('employee', 'name email').populate('workShift', 'shiftName startTime endTime');
+    const results = await FormRequestModel.find().populate('employee', 'name email');
     res.status(200).json({ success: true, data: results, total: results.length });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
@@ -38,7 +40,7 @@ const getFormRequest = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const formRequest = await FormRequestModel.findById(id).populate('employee', 'name email').populate('workShift', 'shiftName startTime endTime');
+    const formRequest = await FormRequestModel.findById(id).populate('employee', 'name email');
     if (!formRequest) {
       return res.status(404).json({ success: false, message: 'FormRequest not found.' });
     }
@@ -54,9 +56,26 @@ const updateFormRequest = async (req, res) => {
 
   try {
     const updatedFormRequest = await FormRequestModel.findByIdAndUpdate(id, updates, { new: true });
+
     if (!updatedFormRequest) {
       return res.status(404).json({ success: false, message: 'FormRequest not found.' });
     }
+
+    if (updates.status === 'ACCEPTED') {
+      await AttendanceModel.updateMany(
+        {
+          employee: new mongoose.Types.ObjectId(updatedFormRequest.employee.toString()),
+          workDate: {
+            $gte: new Date(updatedFormRequest.startDate),
+            $lte: new Date(updatedFormRequest.endDate),
+          },
+        },
+        {
+          $set: { status: 'ON LEAVE' },
+        }
+      );
+    }
+
     res.status(200).json({ success: true, message: 'Update successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });

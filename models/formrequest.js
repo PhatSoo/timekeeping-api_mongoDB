@@ -5,7 +5,6 @@ const formRequestSchema = new Schema(
     employee: { type: ObjectId, ref: 'employees' },
     startDate: Date,
     endDate: Date,
-    workShift: { type: ObjectId, ref: 'work_shifts' },
     reason: String,
     status: {
       type: String,

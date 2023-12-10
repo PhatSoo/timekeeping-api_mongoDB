@@ -1,4 +1,6 @@
 const AttendanceModel = require('../models/attendance');
+const WorkShiftModel = require('../models/workshift');
+const { TIME } = require('../utils/constants');
 
 const createAttendance = async (req, res) => {
   const { checkInTime, checkOutTime, workDate, status, employee } = req.body;
@@ -22,23 +24,25 @@ const listAttendances = async (req, res) => {
 };
 
 const getAttendanceByDate = async (req, res) => {
-  const { date, workShiftID } = req.params;
+  const { date } = req.params;
+  const dateConverted = new Date(`${date} ${TIME}`);
 
   try {
-    let attendance;
+    const attendances = await AttendanceModel.find({ workDate: new Date(dateConverted) })
+      .populate('employee', ['name', 'avatar'])
+      .populate({
+        path: 'workShift',
+        model: 'work_shifts',
+        select: 'startTime endTime',
+      });
 
-    if (workShiftID !== 'false') {
-      attendance = await AttendanceModel.find({ workDate: new Date(date) }).populate('workShift', 'shiftName');
-    } else {
-      attendance = await AttendanceModel.find({ workDate: new Date(date) });
+    if (!attendances) {
+      return res.status(404).json({ success: false, message: 'Attendances not found.' });
     }
 
-    if (!attendance) {
-      return res.status(404).json({ success: false, message: 'Attendance not found.' });
-    }
-
-    res.status(200).json({ success: true, data: attendance, total: attendance.length });
+    res.status(200).json({ success: true, data: attendances, total: attendances.length });
   } catch (error) {
+    console.log('>>>>>');
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
 };

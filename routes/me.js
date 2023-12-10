@@ -13,6 +13,8 @@ const MERoute = (app) => {
   router.get('/existing-shift/:shiftId', MeController.getExistingShiftInCurrent);
   router.get('/', MeController.getMe);
   router.put('/check', uploadAttendance.single('image'), MeController.check);
+  router.post('/form', MeController.form);
+  router.get('/form', MeController.getRequest);
 
   return app.use('/me', authenticate, router);
 };

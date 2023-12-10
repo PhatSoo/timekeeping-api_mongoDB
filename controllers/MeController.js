@@ -1,6 +1,7 @@
 const EmployeeModel = require('../models/employee');
 const ShiftRegistrationModel = require('../models/shiftregistration');
 const AttendanceModel = require('../models/attendance');
+const FormRequestModel = require('../models/formrequest');
 const bcrypt = require('bcrypt');
 require('dotenv/config');
 const { mongoose } = require('../config/database');
@@ -175,9 +176,6 @@ const getAttendance = async (req, res) => {
   try {
     let result = {};
 
-    // const asd = await AttendanceModel.find({ employee: employee._id });
-    // return res.status(200).json(asd);
-
     result = await AttendanceModel.aggregate([
       {
         $lookup: {
@@ -206,10 +204,9 @@ const getAttendance = async (req, res) => {
         $project: {
           workDate: 1,
           workShift: { shiftName: 1 },
-          checkInTime: 1,
-          checkOutTime: 1,
-          // checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime' } },
-          // checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime' } },
+          checkIn: { time: 1 },
+          checkOut: { time: 1 },
+          employee: { isPartTime: 1 },
           status: 1,
         },
       },
@@ -280,8 +277,8 @@ const getExistingShiftInCurrent = async (req, res) => {
           $project: {
             employee: { _id: 1, name: 1 },
             workShift: { shiftName: 1, startTime: 1, endTime: 1 },
-            checkInTime: { $dateToString: { format: '%H:%M:%S', date: '$checkInTime', timezone: process.env.TZ } },
-            checkOutTime: { $dateToString: { format: '%H:%M:%S', date: '$checkOutTime', timezone: process.env.TZ } },
+            checkIn: { time: { $dateToString: { format: '%H:%M:%S', date: '$checkIn.time', timezone: process.env.TZ } } },
+            checkOut: { time: { $dateToString: { format: '%H:%M:%S', date: '$checkOut.time', timezone: process.env.TZ } } },
             status: 1,
           },
         },
@@ -312,12 +309,28 @@ const check = async (req, res) => {
 
     const result = await compare2Images(employeeImage, captureImage);
 
+    console.log('====================================');
+    console.log(result);
+    console.log('====================================');
+
     if (result !== -1) {
       const imageCheck = await cloudinaryUploader(file, 'attendances');
       if (checkType === 'CheckIn') {
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkInTime: new Date(), status: 'WORKING', checkInImage: imageCheck.url, scoreIn: result });
+        const checkIn = {
+          time: new Date(),
+          image: imageCheck.url,
+          score: result,
+        };
+
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { status: 'WORKING', checkIn: checkIn });
       } else {
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { checkOutTime: new Date(), status: 'DONE', checkOutImage: imageCheck.url, scoreOute: result });
+        const checkOut = {
+          time: new Date(),
+          image: imageCheck.url,
+          score: result,
+        };
+
+        await AttendanceModel.findByIdAndUpdate(attendanceId, { status: 'DONE', checkOut: checkOut });
       }
 
       fs.unlink(path.join(path.join(process.cwd(), 'uploads', file.filename)), (err) => {});
@@ -325,6 +338,36 @@ const check = async (req, res) => {
     }
 
     res.status(200).json({ success: false });
+  } catch (error) {
+    console.log('====================================');
+    console.log(error);
+    console.log('====================================');
+  }
+};
+
+const form = async (req, res) => {
+  const data = req.body;
+  const userId = req.userId;
+  try {
+    const createRequest = new FormRequestModel({ ...data, employee: new mongoose.Types.ObjectId(userId) });
+    const result = await createRequest.save();
+    if (result) {
+      res.status(200).json({ success: true });
+    } else res.status(400).json({ success: false });
+  } catch (error) {
+    console.log('====================================');
+    console.log(error);
+    console.log('====================================');
+  }
+};
+
+const getRequest = async (req, res) => {
+  const employeeId = req.userId;
+  try {
+    const data = await FormRequestModel.find({ employee: employeeId });
+    if (data) {
+      res.status(200).json({ success: true, data, total: data.length });
+    } else res.status(400).json({ success: false, message: 'Bạn không có dữ liệu' });
   } catch (error) {
     console.log('====================================');
     console.log(error);
@@ -342,4 +385,6 @@ module.exports = {
   getImageForCheckAttendance,
   getExistingShiftInCurrent,
   check,
+  form,
+  getRequest,
 };

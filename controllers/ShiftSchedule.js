@@ -1,7 +1,9 @@
 const ShiftRegistration = require('../models/shiftregistration');
-// const ShiftAttendanceModel = require('../models/shiftattendance');
+const EmployeeModel = require('../models/employee');
 const AttendanceModel = require('../models/attendance');
 const WorkShift = require('../models/workshift');
+const { createShift } = require('../utils/index');
+const { TIME } = require('../utils/constants');
 
 const createShiftRegistration = async (req, res) => {
   const data = req.body;
@@ -136,14 +138,18 @@ const deleteAll = async (req, res) => {
 };
 
 const schedule = async (req, res) => {
-  const { num, data } = req.body;
-
+  const { num, data, holidays } = req.body;
   try {
     let shiftsAssigned = {};
-    let scheduledShifts = {}; // Đối tượng để theo dõi các ca làm việc đã được xếp lịch cho mỗi người
+    let scheduledShifts = {};
+    let promises = [];
 
     for (let i = 0; i < data.length; i++) {
       let registration = data[i];
+
+      if (holidays.includes(registration.workDate)) {
+        continue;
+      }
 
       if (!scheduledShifts[registration.employee._id]) {
         scheduledShifts[registration.employee._id] = [];
@@ -152,28 +158,68 @@ const schedule = async (req, res) => {
       for (let j = 0; j < registration.workShift.length; j++) {
         let shift = registration.workShift[j];
 
-        // Kiểm tra xem nhân viên đã được xếp lịch cho ca làm việc này chưa
         if ((!shiftsAssigned[shift._id] || shiftsAssigned[shift._id] < num) && !scheduledShifts[registration.employee._id].includes(shift._id)) {
-          // Thêm vào danh sách ca làm việc đã xếp cho nhân viên và danh sách ca làm việc đã được xếp
           scheduledShifts[registration.employee._id].push(shift._id);
           shiftsAssigned[shift._id] = (shiftsAssigned[shift._id] || 0) + 1;
 
-          // Thêm ca làm việc vào danh sách mới
-          const newShift = {
-            workShift: shift._id,
-            employee: registration.employee._id,
-            checkInTime: null,
-            checkOutTime: null,
-            workDate: registration.workDate,
-            status: 'NULL',
-          };
-          // Lưu vào DB
-          const attendance = new AttendanceModel(newShift);
-          await attendance.save();
-          break; // Chỉ xếp lịch cho 1 ca làm việc cho mỗi nhân viên
+          promises.push(createShift(registration, shift));
+          break;
         }
       }
     }
+
+    const employeeFullTime = await EmployeeModel.find({ isPartTime: false });
+    const holidaysConvert = holidays.map((date) => new Date(`${date} ${TIME}`).toISOString());
+
+    let now = new Date();
+    let daysArray = [];
+
+    // Calculate the number of days to next Monday
+    let daysToMonday = (1 - now.getUTCDay() + 7) % 7;
+    const nextMonday = new Date(now.setUTCDate(now.getUTCDate() + daysToMonday));
+    nextMonday.setHours(0, 0, 0, 0);
+    daysArray.push(nextMonday);
+
+    // Add each day from Monday to Saturday to the array
+    for (let i = 1; i <= 5; i++) {
+      let nextDay = new Date(nextMonday.getTime() + i * 24 * 60 * 60 * 1000);
+      daysArray.push(nextDay);
+    }
+
+    for (let i = 0; i < employeeFullTime.length; i++) {
+      let employee = employeeFullTime[i];
+
+      for (let j = 0; j < daysArray.length; j++) {
+        let workDate = daysArray[j].toISOString();
+
+        // Kiểm tra xem ngày làm việc có phải là ngày nghỉ không
+        if (holidaysConvert.includes(workDate)) {
+          continue;
+        }
+        // Tạo một ca làm việc mới
+        const newShift = {
+          workShift: null,
+          employee: employee._id,
+          checkIn: {
+            time: null,
+            image: null,
+            score: null,
+          },
+          checkOut: {
+            time: null,
+            image: null,
+            score: null,
+          },
+          workDate: workDate,
+          status: 'NULL',
+        };
+
+        const attendance = new AttendanceModel(newShift);
+        promises.push(attendance.save());
+      }
+    }
+
+    await Promise.all(promises);
 
     res.status(200).json({ success: true, message: 'Xếp ca làm thành công' });
   } catch (error) {

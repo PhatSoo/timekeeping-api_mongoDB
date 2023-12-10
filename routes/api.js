@@ -5,12 +5,12 @@ const { uploadAvatar } = require('../middlewares/Uploads');
 const EmployeeController = require('../controllers/EmployeeController');
 const RoleController = require('../controllers/RoleController');
 const WorkShiftController = require('../controllers/WorkShiftController');
-const FormTypeController = require('../controllers/FormTypeController');
 const FormRequestController = require('../controllers/FormRequestController');
 const AttendanceController = require('../controllers/AttendanceController');
 const ShiftScheduleController = require('../controllers/ShiftSchedule');
-const WorkDayController = require('../controllers/WorkDayController');
 const UploadController = require('../controllers/UploadController');
+const StatisticController = require('../controllers/StatisticController');
+const SettingsController = require('../controllers/SettingsController');
 const authenticate = require('../middlewares/CheckLogin');
 
 const APIRoute = (app) => {
@@ -26,6 +26,11 @@ const APIRoute = (app) => {
 
   // Upload API
   router.post('/upload/avatar', uploadAvatar.single('avatar'), UploadController.uploadAvatar);
+  // Statistic API
+  router.get('/statistic/:date', StatisticController.getAttendanceInMonth);
+  // Settings API
+  router.get('/settings', SettingsController.getSettings);
+  router.post('/settings', SettingsController.updateSettings);
 
   // Roles API
   router.get('/role', RoleController.listRole);
@@ -42,13 +47,6 @@ const APIRoute = (app) => {
   router.put('/work-shift', WorkShiftController.updateWorkShift);
   router.delete('/work-shift', WorkShiftController.deleteWorkShift);
 
-  // Form Types
-  router.get('/form-type', FormTypeController.listFormTypes);
-  router.get('/form-type/:id', FormTypeController.getFormType);
-  router.post('/form-type', FormTypeController.createFormType);
-  router.put('/form-type/:id', FormTypeController.updateFormType);
-  router.delete('/form-type/:id', FormTypeController.deleteFormType);
-
   // Form Requests
   router.get('/form-request', FormRequestController.listFormRequests);
   router.get('/form-request/pending', FormRequestController.listFormRequestsPending);
@@ -57,16 +55,9 @@ const APIRoute = (app) => {
   router.put('/form-request', FormRequestController.updateFormRequest);
   router.delete('/form-request/:id', FormRequestController.deleteFormRequest);
 
-  // Work Days ????
-  router.get('/work-day', WorkDayController.listWorkDays);
-  router.get('/work-day/:id', WorkDayController.getWorkDay);
-  router.post('/work-day', WorkDayController.createWorkDay);
-  router.put('/work-day/:id', WorkDayController.updateWorkDay);
-  router.delete('/work-day/:id', WorkDayController.deleteWorkDay);
-
   // Attendances for full-time
   router.get('/attendance', AttendanceController.listAttendances);
-  router.get('/attendance/date/:date/:workShiftID?', AttendanceController.getAttendanceByDate);
+  router.get('/attendance/date/:date', AttendanceController.getAttendanceByDate);
   router.get('/attendance/:id', AttendanceController.getAttendance);
   router.post('/attendance', AttendanceController.createAttendance);
   router.put('/attendance/:id', AttendanceController.updateAttendance);
