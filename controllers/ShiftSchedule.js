@@ -2,6 +2,7 @@ const ShiftRegistration = require('../models/shiftregistration');
 const EmployeeModel = require('../models/employee');
 const AttendanceModel = require('../models/attendance');
 const WorkShift = require('../models/workshift');
+const SettingsModel = require('../models/settings');
 const { createShift } = require('../utils/index');
 const { TIME } = require('../utils/constants');
 
@@ -139,15 +140,18 @@ const deleteAll = async (req, res) => {
 
 const schedule = async (req, res) => {
   const { num, data, holidays } = req.body;
+
   try {
     let shiftsAssigned = {};
     let scheduledShifts = {};
     let promises = [];
 
+    const holidaysConvert = holidays.map((date) => new Date(`${date} ${TIME}`).toISOString());
+
     for (let i = 0; i < data.length; i++) {
       let registration = data[i];
 
-      if (holidays.includes(registration.workDate)) {
+      if (holidaysConvert.includes(registration.workDate)) {
         continue;
       }
 
@@ -169,7 +173,9 @@ const schedule = async (req, res) => {
     }
 
     const employeeFullTime = await EmployeeModel.find({ isPartTime: false });
-    const holidaysConvert = holidays.map((date) => new Date(`${date} ${TIME}`).toISOString());
+
+    const settings = await SettingsModel.findOne().select('workDays');
+    const workDays = settings.workDays;
 
     let now = new Date();
     let daysArray = [];
@@ -178,12 +184,13 @@ const schedule = async (req, res) => {
     let daysToMonday = (1 - now.getUTCDay() + 7) % 7;
     const nextMonday = new Date(now.setUTCDate(now.getUTCDate() + daysToMonday));
     nextMonday.setHours(0, 0, 0, 0);
-    daysArray.push(nextMonday);
 
     // Add each day from Monday to Saturday to the array
-    for (let i = 1; i <= 5; i++) {
-      let nextDay = new Date(nextMonday.getTime() + i * 24 * 60 * 60 * 1000);
-      daysArray.push(nextDay);
+    for (let i = 0; i <= workDays.length - 1; i++) {
+      let day = parseInt(workDays[i]);
+      let date = new Date(nextMonday);
+      date.setDate(nextMonday.getDate() + ((day + 7 - nextMonday.getDay()) % 7));
+      daysArray.push(date);
     }
 
     for (let i = 0; i < employeeFullTime.length; i++) {

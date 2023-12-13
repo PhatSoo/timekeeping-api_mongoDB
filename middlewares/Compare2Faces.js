@@ -3,6 +3,7 @@ const { Image, Canvas } = canvas;
 const sharp = require('sharp');
 const face_api = require('face-api.js');
 const path = require('path');
+const fs = require('fs');
 
 face_api.env.monkeyPatch({ Canvas, Image });
 
@@ -52,8 +53,8 @@ const compare2Images = async (employeeImage, captureImage) => {
   await loadingModels();
 
   try {
-    const image1 = await convert2PNGinCloud(employeeImage, captureImage);
-    const image2 = await convert2PNGinLocal(path.join(process.cwd(), captureImage));
+    const image1 = await convert2PNGinCloud(employeeImage);
+    const image2 = await convert2PNGinLocal(captureImage);
 
     if (image1 && image2) {
       const distance = face_api.euclideanDistance(image1, image2);
@@ -69,4 +70,25 @@ const compare2Images = async (employeeImage, captureImage) => {
   }
 };
 
-module.exports = { compare2Images };
+const checkRecognizeFace = async (buffer) => {
+  await loadingModels();
+
+  try {
+    return sharp(buffer)
+      .png()
+      .rotate()
+      .toBuffer()
+      .then(async (pngBuffer) => {
+        const img = await canvas.loadImage(pngBuffer);
+        const imgDetection = await face_api.detectSingleFace(img, new face_api.TinyFaceDetectorOptions());
+        if (imgDetection) {
+          return true;
+        }
+        return false;
+      });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+module.exports = { compare2Images, checkRecognizeFace };

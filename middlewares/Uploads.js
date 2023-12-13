@@ -1,6 +1,6 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+
 // Storage for local
 const storageAvatar = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -58,7 +58,24 @@ const uploadAttendance = multer({
   },
 });
 
+const checkAvatar = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10000000 /* 10MB */ },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype == 'image/png' || file.mimetype == 'image/jpeg') {
+      cb(null, true);
+    } else {
+      console.log('====================================');
+      console.log('Only jpg & png file supported1');
+      console.log('====================================');
+
+      cb(null, false);
+    }
+  },
+});
+
 module.exports = {
   uploadAvatar,
   uploadAttendance,
+  checkAvatar,
 };

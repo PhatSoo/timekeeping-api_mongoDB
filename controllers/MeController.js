@@ -240,10 +240,11 @@ const getImageForCheckAttendance = async (req, res) => {
 const getExistingShiftInCurrent = async (req, res) => {
   const id = req.userId;
   // current shift id get from URL
-  const { shiftId } = req.params;
+  let { shiftId } = req.params;
 
-  const currentDate = new Date();
-  currentDate.setUTCHours(0, 0, 0, 0);
+  let currentDate = new Date();
+  const utcDate = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate() - 1, 17, 0, 0));
+  currentDate = utcDate.toISOString();
 
   try {
     const shifts = (
@@ -269,7 +270,7 @@ const getExistingShiftInCurrent = async (req, res) => {
         {
           $match: {
             'employee._id': new mongoose.Types.ObjectId(id),
-            workDate: currentDate,
+            workDate: { $eq: new Date(currentDate) },
             'workShift._id': shiftId === 'null' ? null : new mongoose.Types.ObjectId(shiftId),
           },
         },
@@ -308,10 +309,6 @@ const check = async (req, res) => {
     const captureImage = req.file.path;
 
     const result = await compare2Images(employeeImage, captureImage);
-
-    console.log('====================================');
-    console.log(result);
-    console.log('====================================');
 
     if (result !== -1) {
       const imageCheck = await cloudinaryUploader(file, 'attendances');
