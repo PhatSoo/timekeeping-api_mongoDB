@@ -2,8 +2,6 @@ const canvas = require('canvas');
 const { Image, Canvas } = canvas;
 const sharp = require('sharp');
 const face_api = require('face-api.js');
-const path = require('path');
-const fs = require('fs');
 
 face_api.env.monkeyPatch({ Canvas, Image });
 
