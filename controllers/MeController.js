@@ -334,6 +334,7 @@ const check = async (req, res) => {
       return res.status(200).json({ success: true });
     }
 
+    fs.unlink(path.join(path.join(process.cwd(), 'uploads', file.filename)), (err) => {});
     res.status(200).json({ success: false });
   } catch (error) {
     console.log('====================================');
