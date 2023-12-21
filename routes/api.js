@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { uploadAvatar, checkAvatar } = require('../middlewares/Uploads');
+const { uploadAvatar } = require('../middlewares/Uploads');
 
 const EmployeeController = require('../controllers/EmployeeController');
 const RoleController = require('../controllers/RoleController');
@@ -26,9 +26,8 @@ const APIRoute = (app) => {
 
   // Upload API
   router.post('/upload/avatar', uploadAvatar.single('avatar'), UploadController.uploadAvatar);
-  router.post('/upload/check-avatar', checkAvatar.single('avatar'), UploadController.checkAvatar);
   // Statistic API
-  router.get('/statistic/:date', StatisticController.getAttendanceInMonth);
+  router.get('/statistic/:from/:to/:filterType', StatisticController.getAttendanceInMonth);
   // Settings API
   router.get('/settings', SettingsController.getSettings);
   router.post('/settings', SettingsController.updateSettings);

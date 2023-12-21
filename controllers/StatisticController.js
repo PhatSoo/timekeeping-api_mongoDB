@@ -1,17 +1,27 @@
 const AttendanceModel = require('../models/attendance');
 
 const getAttendanceInMonth = async (req, res) => {
-  const { date } = req.params;
-  const [year, month, _] = date.split('-');
-  const startDate = new Date(year, month - 1, 1); // Bắt đầu từ ngày đầu tiên của tháng
-  const endDate = new Date(year, month, 0); // Kết thúc là ngày cuối cùng của tháng
-  endDate.setDate(endDate.getDate() + 1); // Tăng thêm 1 ngày để bao gồm cả ngày kết thúc
+  const { from, to, filterType } = req.params;
+
+  let start, end;
+
+  if (filterType === 'date') {
+    const [day1, month1, year1] = from.split('-');
+    const [day2, month2, year2] = to.split('-');
+    start = new Date(year1, month1 - 1, day1);
+    end = new Date(year2, month2 - 1, day2);
+  } else {
+    const [month1, year1] = from.split('-');
+    const [month2, year2] = to.split('-');
+    start = new Date(year1, month1 - 1, 1);
+    end = new Date(year2, month2);
+  }
 
   try {
     const attendanceInMonth = await AttendanceModel.aggregate([
       {
         $match: {
-          workDate: { $gte: startDate, $lt: endDate },
+          workDate: { $gte: start, $lt: end },
         },
       },
       {
@@ -60,7 +70,6 @@ const getAttendanceInMonth = async (req, res) => {
         },
       },
     ]);
-
     res.status(200).json({ success: true, data: attendanceInMonth, total: attendanceInMonth.length });
   } catch (error) {
     console.log('====================================');

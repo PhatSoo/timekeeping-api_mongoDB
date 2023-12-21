@@ -62,10 +62,14 @@ const listShiftRegistrations = async (req, res) => {
   const dateTimeZone = `${date}T00:00:00.000+07:00`;
   const day = new Date(dateTimeZone);
 
-  getDay = (d, add) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay() + add));
+  getDay = (d, add) => {
+    let result = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay() + add));
+    result.setUTCHours(result.getUTCHours() - 7); // Giảm 7 giờ
+    return result;
+  };
 
-  monday = getDay(day, 1);
-  sunday = getDay(day, 7);
+  const monday = getDay(day, 1);
+  const sunday = getDay(day, 7);
 
   try {
     const shiftRegistration = await ShiftRegistration.find({
