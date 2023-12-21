@@ -146,7 +146,7 @@ const schedule = async (req, res) => {
   const { num, data, holidays } = req.body;
 
   try {
-    let shiftsAssigned = {};
+    let shiftsAssignedPerDay = {};
     let scheduledShifts = {};
     let promises = [];
 
@@ -158,6 +158,13 @@ const schedule = async (req, res) => {
       if (holidaysConvert.includes(registration.workDate)) {
         continue;
       }
+
+      // Reset shiftsAssigned for a new day
+      if (!shiftsAssignedPerDay[registration.workDate]) {
+        shiftsAssignedPerDay[registration.workDate] = {};
+      }
+
+      let shiftsAssigned = shiftsAssignedPerDay[registration.workDate];
 
       if (!scheduledShifts[registration.employee._id]) {
         scheduledShifts[registration.employee._id] = [];
