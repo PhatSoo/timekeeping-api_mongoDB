@@ -7,7 +7,6 @@ require('dotenv/config');
 const { mongoose } = require('../config/database');
 const fs = require('fs');
 const path = require('path');
-const { compare2Images } = require('../middlewares/Compare2Faces');
 const { cloudinaryUploader } = require('../config/cloudinary');
 
 // Get info user
@@ -298,51 +297,6 @@ const getExistingShiftInCurrent = async (req, res) => {
   }
 };
 
-const check = async (req, res) => {
-  const { checkType, attendanceId } = req.body;
-  const employeeID = req.userId;
-  const file = req.file;
-
-  try {
-    const currentEmployee = await EmployeeModel.findById(employeeID).select('avatar');
-    const employeeImage = currentEmployee.avatar;
-    const captureImage = req.file.path;
-
-    const result = await compare2Images(employeeImage, captureImage);
-
-    if (result !== -1) {
-      const imageCheck = await cloudinaryUploader(file, 'attendances');
-      if (checkType === 'CheckIn') {
-        const checkIn = {
-          time: new Date(),
-          image: imageCheck.url,
-          score: result,
-        };
-
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { status: 'WORKING', checkIn: checkIn });
-      } else {
-        const checkOut = {
-          time: new Date(),
-          image: imageCheck.url,
-          score: result,
-        };
-
-        await AttendanceModel.findByIdAndUpdate(attendanceId, { status: 'DONE', checkOut: checkOut });
-      }
-
-      fs.unlink(path.join(path.join(process.cwd(), 'uploads', file.filename)), (err) => {});
-      return res.status(200).json({ success: true });
-    }
-
-    fs.unlink(path.join(path.join(process.cwd(), 'uploads', file.filename)), (err) => {});
-    res.status(200).json({ success: false });
-  } catch (error) {
-    console.log('====================================');
-    console.log(error);
-    console.log('====================================');
-  }
-};
-
 const form = async (req, res) => {
   const data = req.body;
   const userId = req.userId;
@@ -382,7 +336,6 @@ module.exports = {
   uploadImage,
   getImageForCheckAttendance,
   getExistingShiftInCurrent,
-  check,
   form,
   getRequest,
 };

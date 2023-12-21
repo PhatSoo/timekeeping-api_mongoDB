@@ -2,7 +2,6 @@ const EmployeeModel = require('../models/employee');
 const fs = require('fs');
 const path = require('path');
 const { cloudinaryUploader, cloudinaryMover } = require('../config/cloudinary');
-const { checkRecognizeFace } = require('../middlewares/Compare2Faces');
 
 const uploadAvatar = async (req, res) => {
   const { _id } = req.body;
@@ -48,21 +47,6 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
-const checkAvatar = async (req, res) => {
-  const file = req.file.buffer;
-
-  try {
-    const result = await checkRecognizeFace(file);
-
-    res.status(200).json({ success: result });
-  } catch (error) {
-    console.log('====================================');
-    console.log(error);
-    console.log('====================================');
-  }
-};
-
 module.exports = {
   uploadAvatar,
-  checkAvatar,
 };

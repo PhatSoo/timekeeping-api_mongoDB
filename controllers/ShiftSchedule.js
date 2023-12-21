@@ -62,10 +62,14 @@ const listShiftRegistrations = async (req, res) => {
   const dateTimeZone = `${date}T00:00:00.000+07:00`;
   const day = new Date(dateTimeZone);
 
-  getDay = (d, add) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay() + add));
+  getDay = (d, add) => {
+    let result = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay() + add));
+    result.setUTCHours(result.getUTCHours() - 7); // Giảm 7 giờ
+    return result;
+  };
 
-  monday = getDay(day, 1);
-  sunday = getDay(day, 7);
+  const monday = getDay(day, 1);
+  const sunday = getDay(day, 7);
 
   try {
     const shiftRegistration = await ShiftRegistration.find({
@@ -142,7 +146,7 @@ const schedule = async (req, res) => {
   const { num, data, holidays } = req.body;
 
   try {
-    let shiftsAssigned = {};
+    let shiftsAssignedPerDay = {};
     let scheduledShifts = {};
     let promises = [];
 
@@ -154,6 +158,13 @@ const schedule = async (req, res) => {
       if (holidaysConvert.includes(registration.workDate)) {
         continue;
       }
+
+      // Reset shiftsAssigned for a new day
+      if (!shiftsAssignedPerDay[registration.workDate]) {
+        shiftsAssignedPerDay[registration.workDate] = {};
+      }
+
+      let shiftsAssigned = shiftsAssignedPerDay[registration.workDate];
 
       if (!scheduledShifts[registration.employee._id]) {
         scheduledShifts[registration.employee._id] = [];

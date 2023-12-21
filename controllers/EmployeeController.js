@@ -46,7 +46,8 @@ const createEmployee = async (req, res, next) => {
 
 const listEmployees = async (req, res, next) => {
   try {
-    const employees = await EmployeeModel.find().populate('role', 'typeName').select(['name', 'CCCD', 'role', 'sex', 'email', 'isPartTime', 'avatar']);
+    const employees = await EmployeeModel.find().populate('role', 'typeName').select(['name', 'CCCD', 'role', 'sex', 'email', 'isPartTime', 'avatar', 'phone']);
+    // const employees = await EmployeeModel.find({ isPartTime: true }, '_id');
     res.status(200).json({
       success: true,
       data: employees,

@@ -42,7 +42,6 @@ const getAttendanceByDate = async (req, res) => {
 
     res.status(200).json({ success: true, data: attendances, total: attendances.length });
   } catch (error) {
-    console.log('>>>>>');
     res.status(500).json({ success: false, message: `An error occurred: ${error.message}` });
   }
 };
