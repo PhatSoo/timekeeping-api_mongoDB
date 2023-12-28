@@ -46,14 +46,14 @@ const getAttendanceInMonth = async (req, res) => {
       },
       {
         $lookup: {
-          from: 'work_shifts', // Thay 'workshifts' bằng tên collection của bạn cho workShift
+          from: 'work_shifts',
           localField: 'attendances.workShift',
           foreignField: '_id',
           as: 'attendances.workShift',
         },
       },
       {
-        $unwind: '$attendances.workShift',
+        $unwind: { path: '$attendances.workShift', preserveNullAndEmptyArrays: true },
       },
       {
         $group: {
