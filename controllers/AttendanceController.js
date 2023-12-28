@@ -33,7 +33,7 @@ const getAttendanceByDate = async (req, res) => {
       .populate({
         path: 'workShift',
         model: 'work_shifts',
-        select: 'startTime endTime',
+        select: 'startTime endTime shiftName',
       });
 
     if (!attendances) {

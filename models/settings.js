@@ -8,6 +8,10 @@ const settingsSchema = new Schema(
       startTime: String,
       endTime: String,
     },
+    schedule: {
+      type: Boolean,
+      default: 'false',
+    },
   },
   {
     timestamps: true,

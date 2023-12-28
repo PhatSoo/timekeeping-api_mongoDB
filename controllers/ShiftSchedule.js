@@ -3,12 +3,25 @@ const EmployeeModel = require('../models/employee');
 const AttendanceModel = require('../models/attendance');
 const WorkShift = require('../models/workshift');
 const SettingsModel = require('../models/settings');
-const { createShift } = require('../utils/index');
+const { createShift, shuffleArray } = require('../utils/index');
 const { TIME } = require('../utils/constants');
 
 const createShiftRegistration = async (req, res) => {
   const data = req.body;
   const employee = req.userId;
+
+  const date = new Date();
+  date.setDate(date.getDate() + 7);
+
+  const currentDateInUTC = new Date(date.toISOString().split('T')[0] + 'T00:00:00.000+07:00');
+  getDay = (d, add) => {
+    let result = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - d.getUTCDay() + add));
+    result.setUTCHours(result.getUTCHours() - 7); // Giảm 7 giờ
+    return result;
+  };
+
+  const monday = getDay(currentDateInUTC, 1);
+  const sunday = getDay(currentDateInUTC, 7);
 
   if (!employee) {
     return res.status(422).json({
@@ -25,9 +38,17 @@ const createShiftRegistration = async (req, res) => {
   }
 
   try {
+    await ShiftRegistration.deleteMany({
+      workDate: {
+        $gte: monday,
+        $lte: sunday,
+      },
+      employee,
+    });
+
     await Promise.all(
       data.map(async (item) => {
-        const existingShiftRegistration = await ShiftRegistration.findOne({ workDate: item.workDate });
+        const existingShiftRegistration = await ShiftRegistration.findOne({ workDate: item.workDate, employee });
 
         if (existingShiftRegistration) {
           // Nếu workDate đã tồn tại, xóa nó trước khi thêm mới
@@ -47,6 +68,11 @@ const createShiftRegistration = async (req, res) => {
         return newShiftRegistration;
       })
     );
+
+    const settings = await SettingsModel.findOne({});
+    if (settings && settings.schedule) {
+      await SettingsModel.updateOne({ $set: { schedule: false } });
+    }
 
     res.status(201).json({
       success: true,
@@ -80,6 +106,7 @@ const listShiftRegistrations = async (req, res) => {
     })
       .populate('employee', 'name')
       .populate('workShift', 'shiftName');
+
     res.status(200).json({
       success: true,
       data: shiftRegistration,
@@ -143,7 +170,9 @@ const deleteAll = async (req, res) => {
 };
 
 const schedule = async (req, res) => {
-  const { num, data, holidays } = req.body;
+  let { num, data, holidays } = req.body;
+
+  data = shuffleArray(data);
 
   try {
     let shiftsAssignedPerDay = {};
@@ -162,6 +191,9 @@ const schedule = async (req, res) => {
       // Reset shiftsAssigned for a new day
       if (!shiftsAssignedPerDay[registration.workDate]) {
         shiftsAssignedPerDay[registration.workDate] = {};
+
+        // Reset scheduledShifts for a new day
+        scheduledShifts = {};
       }
 
       let shiftsAssigned = shiftsAssignedPerDay[registration.workDate];
@@ -238,6 +270,8 @@ const schedule = async (req, res) => {
     }
 
     await Promise.all(promises);
+
+    await SettingsModel.updateOne({}, { schedule: true });
 
     res.status(200).json({ success: true, message: 'Xếp ca làm thành công' });
   } catch (error) {

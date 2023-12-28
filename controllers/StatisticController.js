@@ -65,7 +65,7 @@ const getAttendanceInMonth = async (req, res) => {
       {
         $project: {
           _id: 0,
-          employee: { name: '$employee.name', email: '$employee.email' },
+          employee: { name: '$employee.name', email: '$employee.email', _id: '$employee._id' },
           attendances: 1,
         },
       },
